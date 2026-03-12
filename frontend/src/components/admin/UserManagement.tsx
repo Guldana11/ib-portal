@@ -14,7 +14,6 @@ import {
   RotateCcw,
   Shield,
   ShieldOff,
-  Plus,
   Pencil,
   X,
   UserPlus,

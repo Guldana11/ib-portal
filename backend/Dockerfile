@@ -12,7 +12,8 @@ RUN npm run build
 FROM node:20-alpine AS runner
 
 # Install LibreOffice for Word -> PDF conversion
-RUN apk add --no-cache libreoffice \
+RUN apk add --no-cache openssl \
+    libreoffice \
     ttf-freefont \
     ttf-dejavu \
     fontconfig \
