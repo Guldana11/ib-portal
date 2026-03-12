@@ -14,13 +14,19 @@ if (hasGoogleOAuth) {
 
   router.get(
     '/google/callback',
-    passport.authenticate('google', { failureRedirect: '/login?error=auth_failed' }),
-    async (req: Request, res: Response) => {
-      const user = req.user as any;
-      if (user) {
-        await writeAuditLog({ userId: user.id, action: 'LOGIN', req });
-      }
-      res.redirect(process.env.FRONTEND_URL || '/');
+    (req: Request, res: Response, next) => {
+      passport.authenticate('google', (err: any, user: any, info: any) => {
+        if (err) return next(err);
+        if (!user) {
+          const reason = info?.message || 'auth_failed';
+          return res.redirect(`${process.env.FRONTEND_URL || ''}/login?error=${reason}`);
+        }
+        req.login(user, async (loginErr) => {
+          if (loginErr) return next(loginErr);
+          await writeAuditLog({ userId: user.id, action: 'LOGIN', req });
+          res.redirect(process.env.FRONTEND_URL || '/');
+        });
+      })(req, res, next);
     }
   );
 }

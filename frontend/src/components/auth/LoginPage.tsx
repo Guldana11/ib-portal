@@ -1,11 +1,19 @@
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield } from 'lucide-react';
 
+const errorMessages: Record<string, string> = {
+  USER_BLOCKED: 'Ваш аккаунт заблокирован. Обратитесь к администратору.',
+  DOMAIN_NOT_ALLOWED: 'Вход разрешён только для корпоративных аккаунтов.',
+  auth_failed: 'Ошибка авторизации. Попробуйте ещё раз.',
+};
+
 export default function LoginPage() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const error = searchParams.get('error');
 
   if (isLoading) return null;
   if (isAuthenticated) return <Navigate to="/documents" replace />;
@@ -25,6 +33,11 @@ export default function LoginPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error && (
+            <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive text-center">
+              {errorMessages[error] || 'Произошла ошибка. Попробуйте ещё раз.'}
+            </div>
+          )}
           <p className="text-sm text-muted-foreground text-center">
             Система ознакомления сотрудников с регламентами по информационной безопасности
           </p>

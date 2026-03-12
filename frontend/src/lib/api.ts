@@ -11,6 +11,10 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 403 && error.response?.data?.code === 'USER_BLOCKED') {
+      window.location.href = '/login?error=USER_BLOCKED';
+      return Promise.reject(error);
+    }
     if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
       window.location.href = '/login';
     }
