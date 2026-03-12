@@ -17,6 +17,7 @@ import {
   Pencil,
   X,
   UserPlus,
+  Trash2,
 } from 'lucide-react';
 
 interface UserForm {
@@ -100,6 +101,20 @@ export default function UserManagement() {
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.error || 'Ошибка');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/api/admin/users/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Пользователь удалён');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Ошибка удаления');
     },
   });
 
@@ -313,6 +328,18 @@ export default function UserManagement() {
                           title="Сбросить попытки теста"
                         >
                           <RotateCcw className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            if (confirm(`Удалить пользователя ${user.name}?`)) {
+                              deleteMutation.mutate(user.id);
+                            }
+                          }}
+                          title="Удалить"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     </td>

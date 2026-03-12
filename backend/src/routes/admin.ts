@@ -475,6 +475,42 @@ router.patch('/users/:id', async (req: Request, res: Response, next: NextFunctio
   }
 });
 
+router.delete('/users/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!user) {
+      res.status(404).json({ error: 'Пользователь не найден', code: 'NOT_FOUND' });
+      return;
+    }
+
+    const currentUser = req.user as any;
+    if (user.id === currentUser.id) {
+      res.status(400).json({ error: 'Нельзя удалить самого себя', code: 'SELF_DELETE' });
+      return;
+    }
+
+    await prisma.$transaction([
+      prisma.testAnswer.deleteMany({ where: { attempt: { userId: user.id } } }),
+      prisma.testAttempt.deleteMany({ where: { userId: user.id } }),
+      prisma.documentAcknowledgment.deleteMany({ where: { userId: user.id } }),
+      prisma.auditLog.deleteMany({ where: { userId: user.id } }),
+      prisma.user.delete({ where: { id: user.id } }),
+    ]);
+
+    await writeAuditLog({
+      userId: currentUser.id,
+      action: 'DELETE_USER',
+      entityId: user.id,
+      metadata: { email: user.email },
+      req,
+    });
+
+    res.json({ message: 'Пользователь удалён' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 const resetAttemptsSchema = z.object({
   testId: z.string(),
 });
