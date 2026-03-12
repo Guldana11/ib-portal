@@ -18,9 +18,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           const email = profile.emails?.[0]?.value ?? '';
           const domain = email.split('@')[1]?.toLowerCase();
 
-          if (!ALLOWED_DOMAINS.includes(domain)) {
-            return done(null, false, { message: 'DOMAIN_NOT_ALLOWED' });
-          }
+          // TODO: включить проверку домена для production
+          // if (!ALLOWED_DOMAINS.includes(domain)) {
+          //   return done(null, false, { message: 'DOMAIN_NOT_ALLOWED' });
+          // }
 
           const user = await prisma.user.upsert({
             where: { googleId: profile.id },

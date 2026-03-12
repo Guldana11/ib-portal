@@ -7,6 +7,7 @@ import prisma from '../config/database';
 const router = Router();
 
 const hasGoogleOAuth = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+const isDev = process.env.NODE_ENV === 'development';
 
 if (hasGoogleOAuth) {
   router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -22,12 +23,15 @@ if (hasGoogleOAuth) {
       res.redirect(process.env.FRONTEND_URL || '/');
     }
   );
-} else {
-  // Dev mode: auto-login as any seeded user
+}
+
+if (!hasGoogleOAuth) {
   router.get('/google', (_req: Request, res: Response) => {
     res.redirect('/auth/dev-login');
   });
+}
 
+if (isDev) {
   router.get('/dev-login', async (req: Request, res: Response) => {
     const email = (req.query.email as string) || 'admin@crystalspring.kz';
     const user = await prisma.user.findUnique({ where: { email } });
@@ -44,7 +48,6 @@ if (hasGoogleOAuth) {
     });
   });
 
-  // Page listing available dev users
   router.get('/dev-users', async (_req: Request, res: Response) => {
     const users = await prisma.user.findMany({
       select: { email: true, name: true, role: true },
@@ -55,7 +58,7 @@ if (hasGoogleOAuth) {
 <style>body{font-family:sans-serif;max-width:500px;margin:60px auto;padding:20px}
 a{display:block;padding:12px 16px;margin:8px 0;background:#f0f4ff;border:1px solid #c7d2fe;border-radius:8px;text-decoration:none;color:#1e40af}
 a:hover{background:#e0e7ff}h1{color:#1e3a5f}span{color:#666;font-size:13px}</style></head>
-<body><h1>Dev Login</h1><p>Google OAuth не настроен. Выберите пользователя:</p>
+<body><h1>Dev Login</h1><p>Выберите пользователя:</p>
 ${users.map(u => `<a href="/auth/dev-login?email=${u.email}"><strong>${u.name}</strong><br/><span>${u.email} — ${u.role}</span></a>`).join('')}
 </body></html>`;
     res.send(html);
