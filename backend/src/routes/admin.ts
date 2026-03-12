@@ -406,7 +406,7 @@ router.get('/users', async (req: Request, res: Response, next: NextFunction) => 
 const createUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
-  role: z.enum(['EMPLOYEE', 'ADMIN']).default('EMPLOYEE'),
+  role: z.enum(['EMPLOYEE', 'ADMIN', 'EXTERNAL']).default('EMPLOYEE'),
   isActive: z.boolean().default(true),
 });
 
@@ -444,7 +444,7 @@ const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
   isActive: z.boolean().optional(),
-  role: z.enum(['EMPLOYEE', 'ADMIN']).optional(),
+  role: z.enum(['EMPLOYEE', 'ADMIN', 'EXTERNAL']).optional(),
 });
 
 router.patch('/users/:id', async (req: Request, res: Response, next: NextFunction) => {

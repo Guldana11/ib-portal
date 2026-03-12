@@ -18,10 +18,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           const email = profile.emails?.[0]?.value ?? '';
           const domain = email.split('@')[1]?.toLowerCase();
 
-          // TODO: включить проверку домена для production
-          // if (!ALLOWED_DOMAINS.includes(domain)) {
-          //   return done(null, false, { message: 'DOMAIN_NOT_ALLOWED' });
-          // }
+          const isInternal = ALLOWED_DOMAINS.includes(domain);
 
           const user = await prisma.user.upsert({
             where: { googleId: profile.id },
@@ -35,6 +32,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
               name: profile.displayName,
               googleId: profile.id,
               avatarUrl: profile.photos?.[0]?.value,
+              role: isInternal ? 'EMPLOYEE' : 'EXTERNAL',
               lastLoginAt: new Date(),
             },
           });

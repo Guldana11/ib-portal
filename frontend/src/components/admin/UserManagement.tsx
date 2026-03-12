@@ -23,7 +23,7 @@ import {
 interface UserForm {
   name: string;
   email: string;
-  role: 'EMPLOYEE' | 'ADMIN';
+  role: 'EMPLOYEE' | 'ADMIN' | 'EXTERNAL';
   isActive: boolean;
 }
 
@@ -191,11 +191,12 @@ export default function UserManagement() {
                 <Label>Роль</Label>
                 <select
                   value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value as 'EMPLOYEE' | 'ADMIN' })}
+                  onChange={(e) => setForm({ ...form, role: e.target.value as 'EMPLOYEE' | 'ADMIN' | 'EXTERNAL' })}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="EMPLOYEE">Сотрудник</option>
                   <option value="ADMIN">Администратор</option>
+                  <option value="EXTERNAL">Внешний</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -258,8 +259,8 @@ export default function UserManagement() {
                     <td className="p-4 font-medium">{user.name}</td>
                     <td className="p-4 text-muted-foreground">{user.email}</td>
                     <td className="p-4">
-                      <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
-                        {user.role === 'ADMIN' ? 'Администратор' : 'Сотрудник'}
+                      <Badge variant={user.role === 'ADMIN' ? 'default' : user.role === 'EXTERNAL' ? 'outline' : 'secondary'}>
+                        {user.role === 'ADMIN' ? 'Администратор' : user.role === 'EXTERNAL' ? 'Внешний' : 'Сотрудник'}
                       </Badge>
                     </td>
                     <td className="p-4">
