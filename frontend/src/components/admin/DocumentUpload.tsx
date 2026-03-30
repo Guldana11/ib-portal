@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Upload, FileText, Eye, EyeOff, Pencil, ClipboardCheck, Trash2 } from 'lucide-react';
+import { Upload, FileText, Eye, EyeOff, Pencil, ClipboardCheck, Trash2, Paperclip, AlertTriangle } from 'lucide-react';
 
 const categories = [
   'Политика ИБ',
@@ -34,6 +34,7 @@ export default function DocumentUpload() {
     description: '',
   });
   const [file, setFile] = useState<File | null>(null);
+  const [editingDoc, setEditingDoc] = useState<any>(null);
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ['admin', 'documents'],
@@ -119,6 +120,7 @@ export default function DocumentUpload() {
     setForm({ title: '', category: categories[0], version: '1.0', description: '' });
     setFile(null);
     setEditingId(null);
+    setEditingDoc(null);
     setShowForm(false);
     if (fileRef.current) fileRef.current.value = '';
   };
@@ -131,6 +133,7 @@ export default function DocumentUpload() {
       description: doc.description || '',
     });
     setEditingId(doc.id);
+    setEditingDoc(doc);
     setShowForm(true);
   };
 
@@ -218,6 +221,36 @@ export default function DocumentUpload() {
               </div>
               <div className="md:col-span-2 space-y-2">
                 <Label>Файл (PDF или Word) {!editingId && '*'}</Label>
+
+                {editingDoc && !file && (
+                  <div className={`rounded-lg border p-3 flex items-center gap-3 ${
+                    editingDoc.fileSize > 0
+                      ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800'
+                      : 'bg-orange-50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-800'
+                  }`}>
+                    {editingDoc.fileSize > 0 ? (
+                      <>
+                        <Paperclip className="h-4 w-4 text-green-600 shrink-0" />
+                        <div className="text-sm">
+                          <span className="font-medium text-green-700 dark:text-green-400">Файл прикреплён: </span>
+                          <span className="text-green-600 dark:text-green-500">{editingDoc.fileName}</span>
+                          <span className="text-green-500 dark:text-green-600 ml-1">
+                            ({(editingDoc.fileSize / 1024 / 1024).toFixed(2)} МБ)
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0" />
+                        <div className="text-sm">
+                          <span className="font-medium text-orange-700 dark:text-orange-400">Файл не прикреплён. </span>
+                          <span className="text-orange-600 dark:text-orange-500">Загрузите файл документа ниже.</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 <div
                   onDrop={handleDrop}
                   onDragOver={(e) => e.preventDefault()}
@@ -241,7 +274,9 @@ export default function DocumentUpload() {
                     </p>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Перетащите файл сюда или нажмите для выбора
+                      {editingDoc
+                        ? 'Перетащите новый файл или нажмите для замены'
+                        : 'Перетащите файл сюда или нажмите для выбора'}
                       <br />
                       <span className="text-xs">PDF, DOC, DOCX — максимум 50 МБ</span>
                       <br />
@@ -291,7 +326,14 @@ export default function DocumentUpload() {
                   <tr key={doc.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="p-4">
                       <p className="font-medium">{doc.title}</p>
-                      <p className="text-xs text-muted-foreground">{doc.fileName}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        {doc.fileSize > 0 ? (
+                          <Paperclip className="h-3 w-3 text-green-600" />
+                        ) : (
+                          <AlertTriangle className="h-3 w-3 text-orange-500" />
+                        )}
+                        {doc.fileSize > 0 ? doc.fileName : 'Файл не прикреплён'}
+                      </p>
                     </td>
                     <td className="p-4">
                       <Badge variant="secondary">{doc.category}</Badge>
