@@ -117,16 +117,10 @@ export default function TestRunner() {
   }, [timeLeft]);
 
   const handleOptionToggle = useCallback((questionId: string, optionId: string) => {
-    setAnswers((prev) => {
-      const current = prev[questionId] || [];
-      const hasOption = current.includes(optionId);
-      return {
-        ...prev,
-        [questionId]: hasOption
-          ? current.filter((id) => id !== optionId)
-          : [...current, optionId],
-      };
-    });
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: [optionId],
+    }));
   }, []);
 
   if (isLoading) {
@@ -369,12 +363,17 @@ export default function TestRunner() {
               <button
                 key={option.id}
                 onClick={() => handleOptionToggle(question.id, option.id)}
-                className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                className={`w-full text-left p-4 rounded-lg border-2 transition-colors flex items-center gap-3 ${
                   isSelected
                     ? 'border-primary bg-primary/5'
                     : 'border-border hover:border-primary/50'
                 }`}
               >
+                <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                  isSelected ? 'border-primary' : 'border-muted-foreground/40'
+                }`}>
+                  {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                </div>
                 <span className="text-sm">{option.text}</span>
               </button>
             );
