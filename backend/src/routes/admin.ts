@@ -777,13 +777,75 @@ router.post('/notifications/remind', async (req: Request, res: Response, next: N
 
 router.get('/stats', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const totalEmployees = await prisma.user.count({ where: { role: 'EMPLOYEE' } });
-    const activeEmployees = await prisma.user.count({ where: { role: 'EMPLOYEE', isActive: true } });
+    const activeEmployees = await prisma.user.count({ where: { role: { not: 'ADMIN' }, isActive: true } });
+    const totalEmployees = await prisma.user.count({ where: { role: { not: 'ADMIN' } } });
     const publishedDocs = await prisma.document.count({ where: { isPublished: true } });
     const totalAcks = await prisma.documentAcknowledgment.count();
     const totalTests = await prisma.test.count({ where: { isActive: true } });
     const passedAttempts = await prisma.testAttempt.count({ where: { isPassed: true } });
     const totalAttempts = await prisma.testAttempt.count({ where: { completedAt: { not: null } } });
+
+    // % ознакомления по каждому документу
+    const documents = await prisma.document.findMany({
+      where: { isPublished: true },
+      select: { id: true, title: true, version: true },
+    });
+
+    const docAckStats = [];
+    for (const doc of documents) {
+      const ackCount = await prisma.documentAcknowledgment.count({
+        where: { documentId: doc.id, version: doc.version },
+      });
+      docAckStats.push({
+        documentId: doc.id,
+        title: doc.title,
+        ackCount,
+        ackPercent: activeEmployees > 0 ? Math.round((ackCount / activeEmployees) * 100) : 0,
+      });
+    }
+
+    // Сотрудники с просроченным сроком переобучения
+    const tests = await prisma.test.findMany({
+      where: { isActive: true },
+      include: { document: { select: { title: true } } },
+    });
+
+    const employees = await prisma.user.findMany({
+      where: { role: { not: 'ADMIN' }, isActive: true },
+      include: {
+        testAttempts: {
+          where: { isPassed: true },
+          orderBy: { completedAt: 'desc' },
+          include: { test: { select: { id: true, periodDays: true } } },
+        },
+      },
+    });
+
+    const overdueList: { userName: string; userEmail: string; testTitle: string; expiredAt: string | null }[] = [];
+    const now = new Date();
+    for (const emp of employees) {
+      for (const test of tests) {
+        const lastPassed = emp.testAttempts.find((a) => a.test.id === test.id);
+        if (!lastPassed || !lastPassed.completedAt) {
+          overdueList.push({
+            userName: emp.name,
+            userEmail: emp.email,
+            testTitle: test.title,
+            expiredAt: null,
+          });
+        } else {
+          const expiryDate = new Date(lastPassed.completedAt.getTime() + test.periodDays * 24 * 60 * 60 * 1000);
+          if (now > expiryDate) {
+            overdueList.push({
+              userName: emp.name,
+              userEmail: emp.email,
+              testTitle: test.title,
+              expiredAt: expiryDate.toISOString(),
+            });
+          }
+        }
+      }
+    }
 
     res.json({
       data: {
@@ -795,6 +857,8 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
         passedAttempts,
         totalAttempts,
         testPassRate: totalAttempts > 0 ? Math.round((passedAttempts / totalAttempts) * 100) : 0,
+        docAckStats,
+        overdueList,
       },
     });
   } catch (err) {
