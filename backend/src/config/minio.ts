@@ -21,8 +21,19 @@ export async function uploadFile(fileKey: string, buffer: Buffer, size: number, 
   await minioClient.putObject(BUCKET, fileKey, buffer, size, { 'Content-Type': mimeType });
 }
 
+const MINIO_PUBLIC_URL = process.env.MINIO_PUBLIC_URL || '';
+
 export async function getPresignedUrl(fileKey: string): Promise<string> {
-  return minioClient.presignedGetObject(BUCKET, fileKey, 900); // 15 min TTL
+  const url = await minioClient.presignedGetObject(BUCKET, fileKey, 900); // 15 min TTL
+  if (MINIO_PUBLIC_URL) {
+    const parsed = new URL(url);
+    const publicParsed = new URL(MINIO_PUBLIC_URL);
+    parsed.protocol = publicParsed.protocol;
+    parsed.hostname = publicParsed.hostname;
+    parsed.port = publicParsed.port;
+    return parsed.toString();
+  }
+  return url;
 }
 
 export async function deleteFile(fileKey: string): Promise<void> {
