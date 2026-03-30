@@ -545,17 +545,20 @@ router.post('/users/:id/reset-attempts', async (req: Request, res: Response, nex
 
 router.get('/reports/compliance', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { documentId, status, testStatus, dateFrom, dateTo } = req.query;
+    const { documentId, userId, status, testStatus, dateFrom, dateTo } = req.query;
 
     const users = await prisma.user.findMany({
-      where: { role: 'EMPLOYEE', isActive: true },
+      where: {
+        role: { not: 'ADMIN' },
+        isActive: true,
+        ...(userId ? { id: userId as string } : {}),
+      },
       include: {
-        acknowledgments: documentId
-          ? { where: { documentId: documentId as string } }
-          : true,
+        acknowledgments: true,
         testAttempts: {
           where: { completedAt: { not: null } },
           orderBy: { completedAt: 'desc' },
+          include: { test: { select: { documentId: true } } },
         },
       },
     });
@@ -573,16 +576,14 @@ router.get('/reports/compliance', async (req: Request, res: Response, next: Next
         const ack = user.acknowledgments.find(
           (a) => a.documentId === doc.id && a.version === doc.version
         );
-        const testAttempt = user.testAttempts.find((a) => {
-          const test = (a as any).test;
-          return true;
-        });
 
         const ackStatus = ack ? 'acknowledged' : 'pending';
 
         if (status && status !== ackStatus) continue;
 
-        const relevantAttempts = user.testAttempts;
+        const relevantAttempts = user.testAttempts.filter(
+          (a) => (a as any).test?.documentId === doc.id
+        );
         const passedAttempt = relevantAttempts.find((a) => a.isPassed);
         const currentTestStatus = passedAttempt ? 'passed' : relevantAttempts.length > 0 ? 'failed' : 'not_taken';
 
@@ -604,8 +605,8 @@ router.get('/reports/compliance', async (req: Request, res: Response, next: Next
           ackStatus,
           ackDate: ack?.createdAt || null,
           testStatus: currentTestStatus,
-          testScore: passedAttempt?.score || relevantAttempts[0]?.score || null,
-          testDate: passedAttempt?.completedAt || relevantAttempts[0]?.completedAt || null,
+          testScore: passedAttempt?.score ?? relevantAttempts[0]?.score ?? null,
+          testDate: passedAttempt?.completedAt ?? relevantAttempts[0]?.completedAt ?? null,
         });
       }
     }
