@@ -1,7 +1,9 @@
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useDocuments } from '@/hooks/useDocuments';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, ChevronRight } from 'lucide-react';
 
@@ -13,6 +15,19 @@ const statusMap = {
 
 export default function DocumentList() {
   const { data: documents, isLoading } = useDocuments();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const categories = useMemo((): string[] => {
+    if (!documents) return [];
+    const cats = Array.from(new Set<string>(documents.map((d: any) => d.category as string)));
+    return cats.sort();
+  }, [documents]);
+
+  const filteredDocuments = useMemo(() => {
+    if (!documents) return [];
+    if (!selectedCategory) return documents;
+    return documents.filter((d: any) => d.category === selectedCategory);
+  }, [documents, selectedCategory]);
 
   if (isLoading) {
     return (
@@ -39,16 +54,40 @@ export default function DocumentList() {
         </p>
       </div>
 
-      {documents?.length === 0 && (
+      {categories.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={selectedCategory === null ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedCategory(null)}
+          >
+            Все
+          </Button>
+          {categories.map((cat) => (
+            <Button
+              key={cat}
+              variant={selectedCategory === cat ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory(cat)}
+            >
+              {cat}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {filteredDocuments.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Документы пока не опубликованы
+            {documents?.length === 0
+              ? 'Документы пока не опубликованы'
+              : 'Нет документов в выбранной категории'}
           </CardContent>
         </Card>
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {documents?.map((doc: any) => {
+        {filteredDocuments.map((doc: any) => {
           const status = statusMap[doc.ackStatus as keyof typeof statusMap];
           return (
             <Link key={doc.id} to={`/documents/${doc.id}`}>
