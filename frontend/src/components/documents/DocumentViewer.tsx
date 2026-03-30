@@ -1,16 +1,28 @@
 import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 import { useDocument, useDocumentFile } from '@/hooks/useDocuments';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import AcknowledgeButton from './AcknowledgeButton';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, Download, ClipboardCheck } from 'lucide-react';
 
 export default function DocumentViewer() {
   const { id } = useParams<{ id: string }>();
   const { data: doc, isLoading: docLoading } = useDocument(id!);
   const { data: fileUrl, isLoading: fileLoading } = useDocumentFile(id!);
+
+  const { data: tests } = useQuery({
+    queryKey: ['tests'],
+    queryFn: async () => {
+      const res = await api.get('/api/tests');
+      return res.data.data;
+    },
+  });
+
+  const testForDoc = tests?.find((t: any) => t.documentId === id);
 
   if (docLoading) {
     return (
@@ -63,6 +75,14 @@ export default function DocumentViewer() {
                 </a>
               )}
               <AcknowledgeButton documentId={doc.id} ackStatus={doc.ackStatus} />
+              {doc.ackStatus === 'acknowledged' && testForDoc && (
+                <Link to={`/tests/${testForDoc.id}`}>
+                  <Button className="gap-2">
+                    <ClipboardCheck className="h-4 w-4" />
+                    Пройти тест
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </CardHeader>
