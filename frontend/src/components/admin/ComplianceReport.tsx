@@ -12,6 +12,7 @@ import { Download, Mail, Bell, X } from 'lucide-react';
 export default function ComplianceReport() {
   const [filters, setFilters] = useState({
     documentId: '',
+    userId: '',
     status: '',
     testStatus: '',
     dateFrom: '',
@@ -28,8 +29,17 @@ export default function ComplianceReport() {
     },
   });
 
+  const { data: users } = useQuery({
+    queryKey: ['admin', 'users'],
+    queryFn: async () => {
+      const res = await api.get('/api/admin/users');
+      return res.data.data;
+    },
+  });
+
   const queryParams = new URLSearchParams();
   if (filters.documentId) queryParams.set('documentId', filters.documentId);
+  if (filters.userId) queryParams.set('userId', filters.userId);
   if (filters.status) queryParams.set('status', filters.status);
   if (filters.testStatus) queryParams.set('testStatus', filters.testStatus);
   if (filters.dateFrom) queryParams.set('dateFrom', filters.dateFrom);
@@ -108,7 +118,7 @@ export default function ComplianceReport() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             <div>
               <label className="text-xs font-medium text-muted-foreground">Документ</label>
               <select
@@ -119,6 +129,19 @@ export default function ComplianceReport() {
                 <option value="">Все</option>
                 {documents?.map((doc: any) => (
                   <option key={doc.id} value={doc.id}>{doc.title}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Сотрудник</label>
+              <select
+                value={filters.userId}
+                onChange={(e) => setFilters({ ...filters, userId: e.target.value })}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm mt-1"
+              >
+                <option value="">Все</option>
+                {users?.filter((u: any) => u.role !== 'ADMIN').map((u: any) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
               </select>
             </div>
