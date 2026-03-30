@@ -26,8 +26,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "7900:9000"
+      - "7901:9001"
     volumes:
       - minio_data:/data
     healthcheck:
@@ -60,6 +60,8 @@ services:
     environment:
       DATABASE_URL: postgresql://awareness_user:${POSTGRES_PASSWORD:-awareness_pass_2024}@postgres:5432/awareness_db
       MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_PUBLIC_URL: http://localhost
     ports:
       - "4000:4000"
 
