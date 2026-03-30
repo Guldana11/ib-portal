@@ -39,12 +39,50 @@ router.get('/:id', isAuthenticated, async (req: Request, res: Response, next: Ne
   }
 });
 
+router.get('/:id/in-progress', isAuthenticated, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user as any;
+    const attempt = await testService.getInProgressAttempt(user.id, req.params.id);
+    res.json({ data: attempt });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/:id/start', isAuthenticated, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user as any;
     const attempt = await testService.startTest(user.id, req.params.id);
     await writeAuditLog({ userId: user.id, action: 'START_TEST', entityId: req.params.id, req });
     res.json({ data: { attemptId: attempt.id } });
+  } catch (err: any) {
+    if (err.code === 'TEST_IN_PROGRESS') {
+      res.status(409).json({
+        error: err.message,
+        code: err.code,
+        attemptId: err.attemptId,
+        startedAt: err.startedAt,
+      });
+      return;
+    }
+    if (err.status) {
+      res.status(err.status).json({ error: err.message, code: err.code });
+      return;
+    }
+    next(err);
+  }
+});
+
+router.delete('/:id/cancel-attempt', isAuthenticated, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user as any;
+    const { attemptId } = req.query;
+    if (!attemptId || typeof attemptId !== 'string') {
+      res.status(400).json({ error: 'attemptId обязателен', code: 'VALIDATION_ERROR' });
+      return;
+    }
+    await testService.cancelAttempt(user.id, req.params.id, attemptId);
+    res.json({ message: 'Попытка отменена' });
   } catch (err: any) {
     if (err.status) {
       res.status(err.status).json({ error: err.message, code: err.code });

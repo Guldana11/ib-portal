@@ -119,6 +119,26 @@ export default function QuestionEditor() {
     },
   });
 
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === index) return;
+    const updated = [...questions];
+    const [moved] = updated.splice(dragIndex, 1);
+    updated.splice(index, 0, moved);
+    setQuestions(updated);
+    setDragIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+  };
+
   const addQuestion = () => {
     setQuestions([
       ...questions,
@@ -264,10 +284,17 @@ export default function QuestionEditor() {
           </div>
 
           {questions.map((question, qi) => (
-            <Card key={qi}>
+            <Card
+              key={qi}
+              draggable
+              onDragStart={() => handleDragStart(qi)}
+              onDragOver={(e) => handleDragOver(e, qi)}
+              onDragEnd={handleDragEnd}
+              className={`transition-opacity ${dragIndex === qi ? 'opacity-50' : ''}`}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing">
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium text-muted-foreground">
                       Вопрос {qi + 1}

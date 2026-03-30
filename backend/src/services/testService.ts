@@ -63,6 +63,26 @@ export async function getTestWithQuestions(testId: string) {
   });
 }
 
+export async function getInProgressAttempt(userId: string, testId: string) {
+  return prisma.testAttempt.findFirst({
+    where: { userId, testId, completedAt: null },
+    select: { id: true, startedAt: true },
+  });
+}
+
+export async function cancelAttempt(userId: string, testId: string, attemptId: string) {
+  const attempt = await prisma.testAttempt.findFirst({
+    where: { id: attemptId, userId, testId, completedAt: null },
+  });
+  if (!attempt) {
+    throw { status: 404, code: 'NOT_FOUND', message: 'Попытка не найдена' };
+  }
+  await prisma.$transaction([
+    prisma.testAnswer.deleteMany({ where: { attemptId } }),
+    prisma.testAttempt.delete({ where: { id: attemptId } }),
+  ]);
+}
+
 export async function startTest(userId: string, testId: string) {
   const test = await prisma.test.findUnique({
     where: { id: testId },
@@ -86,7 +106,13 @@ export async function startTest(userId: string, testId: string) {
   });
 
   if (existingInProgress) {
-    throw { status: 409, code: 'TEST_IN_PROGRESS', message: 'У вас есть незавершённая попытка' };
+    throw {
+      status: 409,
+      code: 'TEST_IN_PROGRESS',
+      message: 'У вас есть незавершённая попытка',
+      attemptId: existingInProgress.id,
+      startedAt: existingInProgress.startedAt,
+    };
   }
 
   const completedAttempts = await prisma.testAttempt.count({
@@ -131,7 +157,12 @@ export async function submitTest(
 
   let correctCount = 0;
   const totalQuestions = test.questions.length;
-  const answerResults: { questionId: string; isCorrect: boolean; explanation: string | null }[] = [];
+  const answerResults: {
+    questionId: string;
+    isCorrect: boolean;
+    explanation: string | null;
+    correctOptionIds: string[];
+  }[] = [];
 
   for (const question of test.questions) {
     const userAnswer = answers.find((a) => a.questionId === question.id);
@@ -148,6 +179,7 @@ export async function submitTest(
       questionId: question.id,
       isCorrect,
       explanation: question.explanation,
+      correctOptionIds,
     });
   }
 

@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Clock, ChevronLeft, ChevronRight, Send } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, Send, CheckCircle2, XCircle, Trophy, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function TestRunner() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,9 @@ export default function TestRunner() {
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [submitResult, setSubmitResult] = useState<any>(null);
+
+  const [shuffledQuestions, setShuffledQuestions] = useState<any[] | null>(null);
 
   const { data: test, isLoading } = useQuery({
     queryKey: ['test', id],
@@ -25,6 +29,40 @@ export default function TestRunner() {
       return res.data.data;
     },
   });
+
+  const { data: inProgress, refetch: refetchInProgress } = useQuery({
+    queryKey: ['test-in-progress', id],
+    queryFn: async () => {
+      const res = await api.get(`/api/tests/${id}/in-progress`);
+      return res.data.data;
+    },
+    enabled: !!test && !attemptId,
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: async (attemptIdToCancel: string) => {
+      await api.delete(`/api/tests/${id}/cancel-attempt?attemptId=${attemptIdToCancel}`);
+    },
+    onSuccess: () => {
+      toast.success('Попытка отменена');
+      refetchInProgress();
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Ошибка отмены');
+    },
+  });
+
+  useEffect(() => {
+    if (test?.questions && !shuffledQuestions) {
+      const shuffled = [...test.questions]
+        .sort(() => Math.random() - 0.5)
+        .map((q: any) => ({
+          ...q,
+          options: [...q.options].sort(() => Math.random() - 0.5),
+        }));
+      setShuffledQuestions(shuffled);
+    }
+  }, [test]);
 
   const startMutation = useMutation({
     mutationFn: async () => {
@@ -54,8 +92,8 @@ export default function TestRunner() {
       });
       return res.data.data;
     },
-    onSuccess: () => {
-      navigate(`/tests/${id}/results`);
+    onSuccess: (data) => {
+      setSubmitResult(data);
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.error || 'Ошибка при отправке теста');
@@ -82,8 +120,12 @@ export default function TestRunner() {
     setAnswers((prev) => {
       const current = prev[questionId] || [];
       const hasOption = current.includes(optionId);
-      // For simplicity, treat all questions as single-select
-      return { ...prev, [questionId]: hasOption ? [] : [optionId] };
+      return {
+        ...prev,
+        [questionId]: hasOption
+          ? current.filter((id) => id !== optionId)
+          : [...current, optionId],
+      };
     });
   }, []);
 
@@ -96,6 +138,8 @@ export default function TestRunner() {
     );
   }
 
+  const activeQuestions = shuffledQuestions || test?.questions || [];
+
   if (!test) {
     return (
       <Card>
@@ -103,6 +147,103 @@ export default function TestRunner() {
           Тест не найден
         </CardContent>
       </Card>
+    );
+  }
+
+  // Results screen with explanations
+  if (submitResult) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <Card>
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4">
+              {submitResult.isPassed ? (
+                <Trophy className="h-16 w-16 text-green-500" />
+              ) : (
+                <XCircle className="h-16 w-16 text-destructive" />
+              )}
+            </div>
+            <CardTitle className="text-2xl">
+              {submitResult.isPassed ? 'Тест сдан!' : 'Тест не сдан'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <div className="text-4xl font-bold">{submitResult.score}%</div>
+            <Badge variant={submitResult.isPassed ? 'success' : 'destructive'} className="text-sm">
+              {submitResult.isPassed ? 'Зачёт' : 'Незачёт'}
+            </Badge>
+          </CardContent>
+        </Card>
+
+        <h2 className="text-lg font-semibold">Разбор ответов</h2>
+
+        {activeQuestions.map((q: any, i: number) => {
+          const result = submitResult.answers?.find((a: any) => a.questionId === q.id);
+          const userSelected = answers[q.id] || [];
+          return (
+            <Card key={q.id} className={result?.isCorrect ? 'border-green-200' : 'border-red-200'}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  {result?.isCorrect ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-destructive shrink-0" />
+                  )}
+                  <span className="text-sm font-medium text-muted-foreground">Вопрос {i + 1}</span>
+                </div>
+                <CardTitle className="text-base mt-1">{q.text}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {q.options.map((opt: any) => {
+                  const wasSelected = userSelected.includes(opt.id);
+                  const isCorrectOption = result?.correctOptionIds?.includes(opt.id);
+                  let className = 'border-border';
+                  if (isCorrectOption) {
+                    className = 'border-green-300 bg-green-50';
+                  } else if (wasSelected && !isCorrectOption) {
+                    className = 'border-red-300 bg-red-50';
+                  }
+                  return (
+                    <div
+                      key={opt.id}
+                      className={`p-3 rounded-lg border text-sm flex items-center justify-between ${className}`}
+                    >
+                      <span>{opt.text}</span>
+                      <span className="text-xs ml-2 shrink-0">
+                        {isCorrectOption && wasSelected && (
+                          <span className="text-green-600 font-medium">✓ Верно</span>
+                        )}
+                        {isCorrectOption && !wasSelected && (
+                          <span className="text-green-600 font-medium">✓ Правильный ответ</span>
+                        )}
+                        {!isCorrectOption && wasSelected && (
+                          <span className="text-red-600 font-medium">✗ Ваш ответ</span>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+                {result?.explanation && (
+                  <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm">
+                    <span className="font-medium text-blue-700">Пояснение: </span>
+                    <span className="text-blue-900">{result.explanation}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/tests')} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            К списку тестов
+          </Button>
+          <Button onClick={() => navigate(`/tests/${id}/results`)}>
+            История попыток
+          </Button>
+        </div>
+      </div>
     );
   }
 
@@ -135,22 +276,54 @@ export default function TestRunner() {
             <p className="text-sm text-muted-foreground">
               К документу: {test.document.title}
             </p>
-            <Button
-              onClick={() => startMutation.mutate()}
-              disabled={startMutation.isPending}
-              className="w-full"
-              size="lg"
-            >
-              {startMutation.isPending ? 'Загрузка...' : 'Начать тест'}
-            </Button>
+
+            {inProgress ? (
+              <div className="space-y-3">
+                <div className="rounded-md bg-amber-50 border border-amber-200 p-4 text-sm">
+                  <p className="font-medium text-amber-800">У вас есть незавершённая попытка</p>
+                  <p className="text-amber-700 mt-1">
+                    Начата: {new Date(inProgress.startedAt).toLocaleString('ru-RU')}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      setAttemptId(inProgress.id);
+                      if (test?.timeLimit) setTimeLeft(test.timeLimit * 60);
+                    }}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    Продолжить тест
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => cancelMutation.mutate(inProgress.id)}
+                    disabled={cancelMutation.isPending}
+                    size="lg"
+                  >
+                    {cancelMutation.isPending ? 'Отмена...' : 'Отменить попытку'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                onClick={() => startMutation.mutate()}
+                disabled={startMutation.isPending}
+                className="w-full"
+                size="lg"
+              >
+                {startMutation.isPending ? 'Загрузка...' : 'Начать тест'}
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  const question = test.questions[currentQuestion];
-  const totalQuestions = test.questions.length;
+  const question = activeQuestions[currentQuestion];
+  const totalQuestions = activeQuestions.length;
   const answeredCount = Object.keys(answers).filter((k) => answers[k].length > 0).length;
 
   const formatTime = (seconds: number) => {
@@ -257,8 +430,8 @@ export default function TestRunner() {
 
       {/* Question dots */}
       <div className="flex gap-1 justify-center flex-wrap">
-        {test.questions.map((_: any, i: number) => {
-          const qId = test.questions[i].id;
+        {activeQuestions.map((_: any, i: number) => {
+          const qId = activeQuestions[i].id;
           const isAnswered = answers[qId]?.length > 0;
           return (
             <button
