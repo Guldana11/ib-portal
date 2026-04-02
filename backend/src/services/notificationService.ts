@@ -137,3 +137,48 @@ export async function sendTestReminders(testId?: string, userIds?: string[]): Pr
 export async function sendOverdueTestReminders(): Promise<void> {
   await sendTestReminders();
 }
+
+export async function notifyTestCompleted(
+  userId: string,
+  testId: string,
+  score: number,
+  isPassed: boolean,
+  correctCount: number,
+  totalQuestions: number
+): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const test = await prisma.test.findUnique({
+    where: { id: testId },
+    include: { document: true },
+  });
+  if (!user || !test) return;
+
+  const totalAttempts = await prisma.testAttempt.count({
+    where: { userId, testId, completedAt: { not: null } },
+  });
+  const attemptsLeft = Math.max(0, test.maxAttempts - totalAttempts);
+
+  const admins = await prisma.user.findMany({
+    where: { role: 'ADMIN', isActive: true },
+  });
+
+  const status = isPassed ? '✅ Сдал(а)' : '❌ Не сдал(а)';
+
+  const mailList: MailOptions[] = admins.map((admin) => ({
+    to: admin.email,
+    subject: `[Crystal Spring ИБ] ${user.name} завершил(а) тест: ${test.title}`,
+    text: `Сотрудник ${user.name} (${user.email}) завершил тест:\n«${test.title}» (к документу «${test.document.title}»)\n\nРезультат: ${status}\nВерных ответов: ${correctCount} из ${totalQuestions}\nБалл: ${score}%\nОставшиеся попытки: ${attemptsLeft} из ${test.maxAttempts}\n\nПодробности: ${FRONTEND_URL}/admin/reports`,
+    html: `<p>Сотрудник <strong>${user.name}</strong> (${user.email}) завершил тест:</p>
+<p><strong>«${test.title}»</strong> (к документу «${test.document.title}»)</p>
+<table style="border-collapse:collapse;margin:12px 0;">
+  <tr><td style="padding:4px 12px 4px 0;">Результат:</td><td><strong>${status}</strong></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;">Верных ответов:</td><td><strong>${correctCount} из ${totalQuestions}</strong></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;">Балл:</td><td><strong>${score}%</strong></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;">Осталось попыток:</td><td><strong>${attemptsLeft} из ${test.maxAttempts}</strong></td></tr>
+</table>
+<p><a href="${FRONTEND_URL}/admin/reports">Открыть отчёт</a></p>
+<p>С уважением,<br/>ИБ-Портал ТОО «Crystal Spring»</p>`,
+  }));
+
+  await sendBulk(mailList);
+}

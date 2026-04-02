@@ -200,7 +200,7 @@ export async function submitTest(
     }),
   ]);
 
-  return { score, isPassed, answers: answerResults };
+  return { score, isPassed, correctCount, totalQuestions, answers: answerResults };
 }
 
 export async function getTestHistory(userId: string, testId: string) {

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { isAuthenticated } from '../middleware/auth';
 import { writeAuditLog } from '../middleware/audit';
 import * as testService from '../services/testService';
+import { notifyTestCompleted } from '../services/notificationService';
 
 const router = Router();
 
@@ -105,6 +106,8 @@ router.post('/:id/submit', isAuthenticated, async (req: Request, res: Response, 
       metadata: { score: result.score, isPassed: result.isPassed },
       req,
     });
+
+    notifyTestCompleted(user.id, req.params.id, result.score, result.isPassed, result.correctCount, result.totalQuestions).catch(console.error);
 
     res.json({ data: result });
   } catch (err: any) {
