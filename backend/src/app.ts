@@ -4,7 +4,6 @@ import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import helmet from 'helmet';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
 import cron from 'node-cron';
 import passport from './config/passport';
 import { ensureBucket } from './config/minio';
@@ -48,9 +47,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
-app.use('/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false }));
-app.use('/api', rateLimit({ windowMs: 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false }));
+// Trust proxy (behind nginx)
+app.set('trust proxy', 1);
 
 // Sessions
 const PgStore = connectPgSimple(session);
@@ -75,9 +73,6 @@ app.use(
 // Passport
 app.use(passport.initialize());
 app.use(passport.session());
-
-// Trust proxy (for rate limiter behind nginx)
-app.set('trust proxy', 1);
 
 // Routes
 app.use('/auth', authRoutes);
