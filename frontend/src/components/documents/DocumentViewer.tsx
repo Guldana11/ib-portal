@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { useDocument, useDocumentFile } from '@/hooks/useDocuments';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import AcknowledgeButton from './AcknowledgeButton';
 import { ArrowLeft, Download, ClipboardCheck } from 'lucide-react';
 
 export default function DocumentViewer() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { data: doc, isLoading: docLoading } = useDocument(id!);
   const { data: fileUrl, isLoading: fileLoading } = useDocumentFile(id!);
@@ -37,7 +39,7 @@ export default function DocumentViewer() {
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">
-          Документ не найден
+          {t('documents.notFound')}
         </CardContent>
       </Card>
     );
@@ -48,7 +50,7 @@ export default function DocumentViewer() {
       <Link to="/documents">
         <Button variant="ghost" size="sm" className="gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Назад к документам
+          {t('documents.backToDocuments')}
         </Button>
       </Link>
 
@@ -62,7 +64,7 @@ export default function DocumentViewer() {
               )}
               <div className="flex items-center gap-2 mt-3">
                 <Badge variant="secondary">{doc.category}</Badge>
-                <Badge variant="outline">Версия {doc.version}</Badge>
+                <Badge variant="outline">{t('documents.version', { version: doc.version })}</Badge>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -70,7 +72,7 @@ export default function DocumentViewer() {
                 <a href={fileUrl} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" size="sm" className="gap-2">
                     <Download className="h-4 w-4" />
-                    Скачать
+                    {t('documents.download')}
                   </Button>
                 </a>
               )}
@@ -79,7 +81,7 @@ export default function DocumentViewer() {
                 <Link to={`/tests/${testForDoc.id}`}>
                   <Button className="gap-2">
                     <ClipboardCheck className="h-4 w-4" />
-                    Пройти тест
+                    {t('documents.takeTest')}
                   </Button>
                 </Link>
               )}
@@ -97,7 +99,7 @@ export default function DocumentViewer() {
             />
           ) : (
             <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              Не удалось загрузить файл
+              {t('documents.failedLoad')}
             </div>
           )}
         </CardContent>

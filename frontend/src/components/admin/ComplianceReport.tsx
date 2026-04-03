@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,9 @@ import { toast } from 'sonner';
 import { Download, Mail, Bell, X } from 'lucide-react';
 
 export default function ComplianceReport() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === 'kk' ? 'kk-KZ' : 'ru-RU';
+
   const [filters, setFilters] = useState({
     documentId: '',
     userId: '',
@@ -62,11 +66,11 @@ export default function ComplianceReport() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Отчёт отправлен на email');
+      toast.success(t('admin.reports.reportSent'));
       setEmailModal(false);
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка отправки');
+      toast.error(err.response?.data?.error || t('admin.reports.sendError'));
     },
   });
 
@@ -76,10 +80,10 @@ export default function ComplianceReport() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Напоминания отправлены');
+      toast.success(t('admin.reports.remindersSent'));
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка отправки');
+      toast.error(err.response?.data?.error || t('admin.reports.sendError'));
     },
   });
 
@@ -88,90 +92,89 @@ export default function ComplianceReport() {
   };
 
   const statusLabels: Record<string, string> = {
-    acknowledged: 'Ознакомлен',
-    pending: 'Не ознакомлен',
-    passed: 'Сдан',
-    failed: 'Не сдан',
-    not_taken: 'Не проходил',
+    acknowledged: t('admin.reports.acknowledged'),
+    pending: t('admin.reports.notAcknowledged'),
+    passed: t('admin.reports.passed'),
+    failed: t('admin.reports.failed'),
+    not_taken: t('admin.reports.notTaken'),
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-2xl font-bold">Отчёт по соответствию</h1>
+        <h1 className="text-2xl font-bold">{t('admin.reports.title')}</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => remindMutation.mutate()} disabled={remindMutation.isPending} className="gap-2">
             <Bell className="h-4 w-4" />
-            Напомнить
+            {t('admin.reports.remind')}
           </Button>
           <Button variant="outline" onClick={handleExportCSV} className="gap-2">
             <Download className="h-4 w-4" />
-            Скачать CSV
+            {t('admin.reports.downloadCsv')}
           </Button>
           <Button variant="outline" onClick={() => setEmailModal(true)} className="gap-2">
             <Mail className="h-4 w-4" />
-            Отправить на email
+            {t('admin.reports.sendEmail')}
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Документ</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('admin.reports.document')}</label>
               <select
                 value={filters.documentId}
                 onChange={(e) => setFilters({ ...filters, documentId: e.target.value })}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm mt-1"
               >
-                <option value="">Все</option>
+                <option value="">{t('admin.reports.all')}</option>
                 {documents?.map((doc: any) => (
                   <option key={doc.id} value={doc.id}>{doc.title}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Сотрудник</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('admin.reports.employee')}</label>
               <select
                 value={filters.userId}
                 onChange={(e) => setFilters({ ...filters, userId: e.target.value })}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm mt-1"
               >
-                <option value="">Все</option>
+                <option value="">{t('admin.reports.all')}</option>
                 {users?.filter((u: any) => u.role !== 'ADMIN').map((u: any) => (
                   <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Ознакомление</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('admin.reports.acknowledgment')}</label>
               <select
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm mt-1"
               >
-                <option value="">Все</option>
-                <option value="acknowledged">Ознакомлен</option>
-                <option value="pending">Не ознакомлен</option>
+                <option value="">{t('admin.reports.all')}</option>
+                <option value="acknowledged">{t('admin.reports.acknowledged')}</option>
+                <option value="pending">{t('admin.reports.notAcknowledged')}</option>
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Тест</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('admin.reports.test')}</label>
               <select
                 value={filters.testStatus}
                 onChange={(e) => setFilters({ ...filters, testStatus: e.target.value })}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm mt-1"
               >
-                <option value="">Все</option>
-                <option value="passed">Сдан</option>
-                <option value="failed">Не сдан</option>
-                <option value="not_taken">Не проходил</option>
+                <option value="">{t('admin.reports.all')}</option>
+                <option value="passed">{t('admin.reports.passed')}</option>
+                <option value="failed">{t('admin.reports.failed')}</option>
+                <option value="not_taken">{t('admin.reports.notTaken')}</option>
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Дата от</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('admin.reports.dateFrom')}</label>
               <Input
                 type="date"
                 value={filters.dateFrom}
@@ -180,7 +183,7 @@ export default function ComplianceReport() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Дата до</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('admin.reports.dateTo')}</label>
               <Input
                 type="date"
                 value={filters.dateTo}
@@ -192,7 +195,6 @@ export default function ComplianceReport() {
         </CardContent>
       </Card>
 
-      {/* Report table */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -206,21 +208,21 @@ export default function ComplianceReport() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="text-left p-3 font-medium">Сотрудник</th>
-                    <th className="text-left p-3 font-medium">Email</th>
-                    <th className="text-left p-3 font-medium">Документ</th>
-                    <th className="text-left p-3 font-medium">Версия</th>
-                    <th className="text-left p-3 font-medium">Ознакомлен</th>
-                    <th className="text-left p-3 font-medium">Тест</th>
-                    <th className="text-left p-3 font-medium">Балл</th>
-                    <th className="text-left p-3 font-medium">Дата теста</th>
+                    <th className="text-left p-3 font-medium">{t('admin.reports.employeeCol')}</th>
+                    <th className="text-left p-3 font-medium">{t('admin.reports.emailCol')}</th>
+                    <th className="text-left p-3 font-medium">{t('admin.reports.documentCol')}</th>
+                    <th className="text-left p-3 font-medium">{t('admin.reports.versionCol')}</th>
+                    <th className="text-left p-3 font-medium">{t('admin.reports.ackCol')}</th>
+                    <th className="text-left p-3 font-medium">{t('admin.reports.testCol')}</th>
+                    <th className="text-left p-3 font-medium">{t('admin.reports.scoreCol')}</th>
+                    <th className="text-left p-3 font-medium">{t('admin.reports.testDateCol')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {report?.length === 0 && (
                     <tr>
                       <td colSpan={8} className="p-8 text-center text-muted-foreground">
-                        Нет данных для отображения
+                        {t('admin.reports.noData')}
                       </td>
                     </tr>
                   )}
@@ -250,7 +252,7 @@ export default function ComplianceReport() {
                       </td>
                       <td className="p-3">{row.testScore != null ? `${row.testScore}%` : '—'}</td>
                       <td className="p-3 text-muted-foreground">
-                        {row.testDate ? new Date(row.testDate).toLocaleDateString('ru-RU') : '—'}
+                        {row.testDate ? new Date(row.testDate).toLocaleDateString(locale) : '—'}
                       </td>
                     </tr>
                   ))}
@@ -261,13 +263,12 @@ export default function ComplianceReport() {
         </CardContent>
       </Card>
 
-      {/* Email modal */}
       {emailModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Отправить отчёт на email</CardTitle>
+                <CardTitle className="text-lg">{t('admin.reports.sendReportTitle')}</CardTitle>
                 <Button variant="ghost" size="icon" onClick={() => setEmailModal(false)}>
                   <X className="h-4 w-4" />
                 </Button>
@@ -275,23 +276,23 @@ export default function ComplianceReport() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Email получателя</label>
+                <label className="text-sm font-medium">{t('admin.reports.recipientEmail')}</label>
                 <Input
                   type="email"
                   value={emailTo}
                   onChange={(e) => setEmailTo(e.target.value)}
-                  placeholder="admin@crystalspring.kz"
+                  placeholder={t('admin.reports.emailPlaceholder')}
                 />
               </div>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setEmailModal(false)}>
-                  Отмена
+                  {t('admin.reports.cancelBtn')}
                 </Button>
                 <Button
                   disabled={!emailTo || sendEmailMutation.isPending}
                   onClick={() => sendEmailMutation.mutate()}
                 >
-                  {sendEmailMutation.isPending ? 'Отправка...' : 'Отправить'}
+                  {sendEmailMutation.isPending ? t('admin.reports.sending') : t('admin.reports.sendBtn')}
                 </Button>
               </div>
             </CardContent>

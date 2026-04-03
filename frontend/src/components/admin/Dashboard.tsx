@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,9 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === 'kk' ? 'kk-KZ' : 'ru-RU';
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin', 'stats'],
     queryFn: async () => {
@@ -20,7 +24,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Панель управления</h1>
+        <h1 className="text-2xl font-bold">{t('admin.dashboard.title')}</h1>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i}>
@@ -36,33 +40,33 @@ export default function Dashboard() {
 
   const metrics = [
     {
-      title: 'Сотрудников',
+      title: t('admin.dashboard.employees'),
       value: `${stats?.activeEmployees || 0}/${stats?.totalEmployees || 0}`,
-      description: 'активных / всего',
+      description: t('admin.dashboard.activeOfTotal'),
       icon: Users,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
     },
     {
-      title: 'Документов',
+      title: t('admin.dashboard.documentsCount'),
       value: stats?.publishedDocs || 0,
-      description: 'опубликовано',
+      description: t('admin.dashboard.published'),
       icon: FileText,
       color: 'text-green-600',
       bg: 'bg-green-50',
     },
     {
-      title: 'Успешность тестов',
+      title: t('admin.dashboard.testSuccess'),
       value: `${stats?.testPassRate || 0}%`,
-      description: `${stats?.passedAttempts || 0} из ${stats?.totalAttempts || 0}`,
+      description: t('admin.dashboard.ofAttempts', { passed: stats?.passedAttempts || 0, total: stats?.totalAttempts || 0 }),
       icon: TrendingUp,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
     },
     {
-      title: 'Просрочено',
+      title: t('admin.dashboard.overdue'),
       value: stats?.overdueList?.length || 0,
-      description: 'требуется переобучение',
+      description: t('admin.dashboard.retrainingRequired'),
       icon: AlertTriangle,
       color: 'text-orange-600',
       bg: 'bg-orange-50',
@@ -72,7 +76,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Панель управления</h1>
+        <h1 className="text-2xl font-bold">{t('admin.dashboard.title')}</h1>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -95,14 +99,13 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Ознакомление по документам */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Ознакомление по документам</CardTitle>
+            <CardTitle className="text-lg">{t('admin.dashboard.docAcknowledgment')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {stats?.docAckStats?.length === 0 && (
-              <p className="text-sm text-muted-foreground">Нет опубликованных документов</p>
+              <p className="text-sm text-muted-foreground">{t('admin.dashboard.noPublishedDocs')}</p>
             )}
             {stats?.docAckStats?.map((doc: any) => (
               <div key={doc.documentId} className="space-y-1">
@@ -112,29 +115,28 @@ export default function Dashboard() {
                 </div>
                 <Progress value={doc.ackPercent} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  {doc.ackCount} из {stats.activeEmployees} сотрудников
+                  {t('admin.dashboard.ofEmployees', { count: doc.ackCount, total: stats.activeEmployees })}
                 </p>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        {/* Просроченные переобучения */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Требуется переобучение</CardTitle>
+            <CardTitle className="text-lg">{t('admin.dashboard.retrainingTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
             {stats?.overdueList?.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Все сотрудники в норме</p>
+              <p className="text-sm text-muted-foreground">{t('admin.dashboard.allCompliant')}</p>
             ) : (
               <div className="overflow-y-auto max-h-[400px]">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2 font-medium">Сотрудник</th>
-                      <th className="text-left py-2 font-medium">Тест</th>
-                      <th className="text-left py-2 font-medium">Статус</th>
+                      <th className="text-left py-2 font-medium">{t('admin.dashboard.employee')}</th>
+                      <th className="text-left py-2 font-medium">{t('admin.dashboard.test')}</th>
+                      <th className="text-left py-2 font-medium">{t('admin.dashboard.status')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -148,10 +150,10 @@ export default function Dashboard() {
                         <td className="py-2">
                           {row.expiredAt ? (
                             <Badge variant="destructive">
-                              Истёк {new Date(row.expiredAt).toLocaleDateString('ru-RU')}
+                              {t('admin.dashboard.expired', { date: new Date(row.expiredAt).toLocaleDateString(locale) })}
                             </Badge>
                           ) : (
-                            <Badge variant="secondary">Не проходил</Badge>
+                            <Badge variant="secondary">{t('admin.dashboard.notTaken')}</Badge>
                           )}
                         </td>
                       </tr>
@@ -164,28 +166,27 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Быстрые действия */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Быстрые действия</CardTitle>
+          <CardTitle className="text-lg">{t('admin.dashboard.quickActions')}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-2 md:grid-cols-3">
           <Link to="/admin/documents">
             <Button variant="outline" className="w-full justify-start gap-2">
               <FileText className="h-4 w-4" />
-              Управление документами
+              {t('admin.dashboard.manageDocuments')}
             </Button>
           </Link>
           <Link to="/admin/users">
             <Button variant="outline" className="w-full justify-start gap-2">
               <Users className="h-4 w-4" />
-              Управление пользователями
+              {t('admin.dashboard.manageUsers')}
             </Button>
           </Link>
           <Link to="/admin/reports">
             <Button variant="outline" className="w-full justify-start gap-2">
               <ClipboardCheck className="h-4 w-4" />
-              Отчёты по соответствию
+              {t('admin.dashboard.complianceReports')}
             </Button>
           </Link>
         </CardContent>

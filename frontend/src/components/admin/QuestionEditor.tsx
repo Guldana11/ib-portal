@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ interface QuestionForm {
 }
 
 export default function QuestionEditor() {
+  const { t } = useTranslation();
   const { documentId } = useParams<{ documentId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -81,10 +83,10 @@ export default function QuestionEditor() {
     },
     onSuccess: (data) => {
       setTestId(data.id);
-      toast.success('Тест создан');
+      toast.success(t('admin.questionEditor.testCreated'));
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка создания теста');
+      toast.error(err.response?.data?.error || t('admin.questionEditor.createError'));
     },
   });
 
@@ -111,11 +113,11 @@ export default function QuestionEditor() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Тест сохранён');
+      toast.success(t('admin.questionEditor.testSaved'));
       queryClient.invalidateQueries({ queryKey: ['admin', 'test', documentId] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка сохранения');
+      toast.error(err.response?.data?.error || t('admin.questionEditor.saveError'));
     },
   });
 
@@ -190,38 +192,37 @@ export default function QuestionEditor() {
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin/documents')} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Назад
+          {t('admin.questionEditor.back')}
         </Button>
         <h1 className="text-2xl font-bold">
-          {testId ? 'Редактирование теста' : 'Создание теста'}
+          {testId ? t('admin.questionEditor.editTest') : t('admin.questionEditor.createTest')}
         </h1>
       </div>
 
-      {/* Test settings */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Настройки теста</CardTitle>
+          <CardTitle className="text-lg">{t('admin.questionEditor.testSettings')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2 space-y-2">
-              <Label>Название теста *</Label>
+              <Label>{t('admin.questionEditor.testName')}</Label>
               <Input
                 value={testSettings.title}
                 onChange={(e) => setTestSettings({ ...testSettings, title: e.target.value })}
-                placeholder="Тест по политике ИБ"
+                placeholder={t('admin.questionEditor.testNamePlaceholder')}
               />
             </div>
             <div className="md:col-span-2 space-y-2">
-              <Label>Описание</Label>
+              <Label>{t('admin.questionEditor.description')}</Label>
               <Textarea
                 value={testSettings.description}
                 onChange={(e) => setTestSettings({ ...testSettings, description: e.target.value })}
-                placeholder="Описание теста"
+                placeholder={t('admin.questionEditor.descPlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label>Проходной балл (%)</Label>
+              <Label>{t('admin.questionEditor.passingScore')}</Label>
               <Input
                 type="number"
                 min={1}
@@ -231,17 +232,17 @@ export default function QuestionEditor() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Ограничение времени (мин)</Label>
+              <Label>{t('admin.questionEditor.timeLimit')}</Label>
               <Input
                 type="number"
                 min={1}
                 value={testSettings.timeLimit}
                 onChange={(e) => setTestSettings({ ...testSettings, timeLimit: e.target.value })}
-                placeholder="Без ограничения"
+                placeholder={t('admin.questionEditor.noLimit')}
               />
             </div>
             <div className="space-y-2">
-              <Label>Максимум попыток</Label>
+              <Label>{t('admin.questionEditor.maxAttempts')}</Label>
               <Input
                 type="number"
                 min={1}
@@ -250,7 +251,7 @@ export default function QuestionEditor() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Периодичность (дней)</Label>
+              <Label>{t('admin.questionEditor.period')}</Label>
               <Input
                 type="number"
                 min={1}
@@ -266,20 +267,19 @@ export default function QuestionEditor() {
               onClick={() => createMutation.mutate()}
               disabled={!testSettings.title || createMutation.isPending}
             >
-              {createMutation.isPending ? 'Создание...' : 'Создать тест'}
+              {createMutation.isPending ? t('admin.questionEditor.creating') : t('admin.questionEditor.createTestBtn')}
             </Button>
           )}
         </CardContent>
       </Card>
 
-      {/* Questions */}
       {testId && (
         <>
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Вопросы ({questions.length})</h2>
+            <h2 className="text-lg font-semibold">{t('admin.questionEditor.questionsTitle', { count: questions.length })}</h2>
             <Button onClick={addQuestion} variant="outline" className="gap-2">
               <Plus className="h-4 w-4" />
-              Добавить вопрос
+              {t('admin.questionEditor.addQuestion')}
             </Button>
           </div>
 
@@ -297,7 +297,7 @@ export default function QuestionEditor() {
                   <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing">
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium text-muted-foreground">
-                      Вопрос {qi + 1}
+                      {t('admin.questionEditor.questionNum', { num: qi + 1 })}
                     </span>
                   </div>
                   <Button
@@ -312,21 +312,21 @@ export default function QuestionEditor() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Текст вопроса *</Label>
+                  <Label>{t('admin.questionEditor.questionText')}</Label>
                   <Textarea
                     value={question.text}
                     onChange={(e) => updateQuestion(qi, 'text', e.target.value)}
-                    placeholder="Введите вопрос..."
+                    placeholder={t('admin.questionEditor.questionPlaceholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>Варианты ответов</Label>
+                    <Label>{t('admin.questionEditor.answerOptions')}</Label>
                     {question.options.length < 6 && (
                       <Button variant="ghost" size="sm" onClick={() => addOption(qi)} className="gap-1 text-xs">
                         <Plus className="h-3 w-3" />
-                        Добавить
+                        {t('admin.questionEditor.add')}
                       </Button>
                     )}
                   </div>
@@ -337,12 +337,12 @@ export default function QuestionEditor() {
                         checked={option.isCorrect}
                         onChange={(e) => updateOption(qi, oi, 'isCorrect', e.target.checked)}
                         className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                        title="Правильный ответ"
+                        title={t('admin.questionEditor.correctAnswer')}
                       />
                       <Input
                         value={option.text}
                         onChange={(e) => updateOption(qi, oi, 'text', e.target.value)}
-                        placeholder={`Вариант ${oi + 1}`}
+                        placeholder={t('admin.questionEditor.optionNum', { num: oi + 1 })}
                         className="flex-1"
                       />
                       {question.options.length > 2 && (
@@ -353,16 +353,16 @@ export default function QuestionEditor() {
                     </div>
                   ))}
                   <p className="text-xs text-muted-foreground">
-                    Отметьте галочкой правильные варианты ответов
+                    {t('admin.questionEditor.checkCorrect')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Пояснение (показывается после сдачи)</Label>
+                  <Label>{t('admin.questionEditor.explanationLabel')}</Label>
                   <Textarea
                     value={question.explanation}
                     onChange={(e) => updateQuestion(qi, 'explanation', e.target.value)}
-                    placeholder="Пояснение к правильному ответу"
+                    placeholder={t('admin.questionEditor.explanationPlaceholder')}
                     rows={2}
                   />
                 </div>
@@ -373,7 +373,7 @@ export default function QuestionEditor() {
           {questions.length === 0 && (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
-                Нет вопросов. Нажмите «Добавить вопрос» чтобы начать.
+                {t('admin.questionEditor.noQuestions')}
               </CardContent>
             </Card>
           )}
@@ -386,7 +386,7 @@ export default function QuestionEditor() {
               size="lg"
             >
               <Save className="h-4 w-4" />
-              {saveMutation.isPending ? 'Сохранение...' : 'Сохранить тест'}
+              {saveMutation.isPending ? t('admin.questionEditor.saving') : t('admin.questionEditor.saveTest')}
             </Button>
           </div>
         </>

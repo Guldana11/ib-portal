@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,8 @@ interface UserForm {
 const emptyForm: UserForm = { name: '', email: '', role: 'EMPLOYEE', isActive: true };
 
 export default function UserManagement() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === 'kk' ? 'kk-KZ' : 'ru-RU';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -54,7 +57,6 @@ export default function UserManagement() {
     enabled: !!resetModal,
   });
 
-  // Create / Update user
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (editingId) {
@@ -66,12 +68,12 @@ export default function UserManagement() {
       }
     },
     onSuccess: () => {
-      toast.success(editingId ? 'Пользователь обновлён' : 'Пользователь добавлен');
+      toast.success(editingId ? t('admin.users.userUpdated') : t('admin.users.userAdded'));
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      resetForm();
+      resetFormFn();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка сохранения');
+      toast.error(err.response?.data?.error || t('admin.users.saveError'));
     },
   });
 
@@ -82,10 +84,10 @@ export default function UserManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      toast.success('Пользователь обновлён');
+      toast.success(t('admin.users.userUpdated'));
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка');
+      toast.error(err.response?.data?.error || t('admin.users.error'));
     },
   });
 
@@ -95,12 +97,12 @@ export default function UserManagement() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Попытки сброшены');
+      toast.success(t('admin.users.attemptsReset'));
       setResetModal(null);
       setSelectedTestId('');
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка');
+      toast.error(err.response?.data?.error || t('admin.users.error'));
     },
   });
 
@@ -110,15 +112,15 @@ export default function UserManagement() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Пользователь удалён');
+      toast.success(t('admin.users.userDeleted'));
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка удаления');
+      toast.error(err.response?.data?.error || t('admin.users.deleteError'));
     },
   });
 
-  const resetForm = () => {
+  const resetFormFn = () => {
     setForm(emptyForm);
     setEditingId(null);
     setShowForm(false);
@@ -138,7 +140,7 @@ export default function UserManagement() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">Пользователи</h1>
+        <h1 className="text-2xl font-bold">{t('admin.users.title')}</h1>
         <Skeleton className="h-[400px] w-full" />
       </div>
     );
@@ -147,110 +149,108 @@ export default function UserManagement() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Пользователи</h1>
+        <h1 className="text-2xl font-bold">{t('admin.users.title')}</h1>
         <Button
           onClick={() => {
-            resetForm();
+            resetFormFn();
             setShowForm(!showForm);
           }}
           className="gap-2"
         >
           <UserPlus className="h-4 w-4" />
-          {showForm ? 'Скрыть форму' : 'Добавить сотрудника'}
+          {showForm ? t('admin.users.hideForm') : t('admin.users.addEmployee')}
         </Button>
       </div>
 
-      {/* Add / Edit form */}
       {showForm && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
-              {editingId ? 'Редактирование пользователя' : 'Новый пользователь'}
+              {editingId ? t('admin.users.editUser') : t('admin.users.newUser')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>ФИО *</Label>
+                <Label>{t('admin.users.fullName')}</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Иванов Иван Иванович"
+                  placeholder={t('admin.users.namePlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Email *</Label>
+                <Label>{t('admin.users.email')}</Label>
                 <Input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="ivanov@crystalspring.kz"
+                  placeholder={t('admin.users.emailPlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Роль</Label>
+                <Label>{t('admin.users.role')}</Label>
                 <select
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value as 'EMPLOYEE' | 'ADMIN' | 'EXTERNAL' })}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="EMPLOYEE">Сотрудник</option>
-                  <option value="ADMIN">Администратор</option>
-                  <option value="EXTERNAL">Внешний</option>
+                  <option value="EMPLOYEE">{t('admin.users.employee')}</option>
+                  <option value="ADMIN">{t('admin.users.administrator')}</option>
+                  <option value="EXTERNAL">{t('admin.users.external')}</option>
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>Статус</Label>
+                <Label>{t('admin.users.statusLabel')}</Label>
                 <select
                   value={form.isActive ? 'true' : 'false'}
                   onChange={(e) => setForm({ ...form, isActive: e.target.value === 'true' })}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="true">Активен</option>
-                  <option value="false">Заблокирован</option>
+                  <option value="true">{t('admin.users.active')}</option>
+                  <option value="false">{t('admin.users.blocked')}</option>
                 </select>
               </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Button variant="outline" onClick={resetForm}>
-                Отмена
+              <Button variant="outline" onClick={resetFormFn}>
+                {t('admin.users.cancelBtn')}
               </Button>
               <Button
                 onClick={() => saveMutation.mutate()}
                 disabled={saveMutation.isPending || !form.name || !form.email}
               >
                 {saveMutation.isPending
-                  ? 'Сохранение...'
+                  ? t('admin.users.saving')
                   : editingId
-                  ? 'Сохранить изменения'
-                  : 'Добавить пользователя'}
+                  ? t('admin.users.saveChanges')
+                  : t('admin.users.addUser')}
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Users table */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="text-left p-4 font-medium">Имя</th>
+                  <th className="text-left p-4 font-medium">{t('admin.users.name')}</th>
                   <th className="text-left p-4 font-medium">Email</th>
-                  <th className="text-left p-4 font-medium">Роль</th>
-                  <th className="text-left p-4 font-medium">Статус</th>
-                  <th className="text-left p-4 font-medium">Последний вход</th>
-                  <th className="text-left p-4 font-medium">Стат.</th>
-                  <th className="text-right p-4 font-medium">Действия</th>
+                  <th className="text-left p-4 font-medium">{t('admin.users.role')}</th>
+                  <th className="text-left p-4 font-medium">{t('admin.users.statusLabel')}</th>
+                  <th className="text-left p-4 font-medium">{t('admin.users.lastLogin')}</th>
+                  <th className="text-left p-4 font-medium">{t('admin.users.stat')}</th>
+                  <th className="text-right p-4 font-medium">{t('admin.users.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {users?.length === 0 && (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                      Нет пользователей
+                      {t('admin.users.noUsers')}
                     </td>
                   </tr>
                 )}
@@ -260,23 +260,23 @@ export default function UserManagement() {
                     <td className="p-4 text-muted-foreground">{user.email}</td>
                     <td className="p-4">
                       <Badge variant={user.role === 'ADMIN' ? 'default' : user.role === 'EXTERNAL' ? 'outline' : 'secondary'}>
-                        {user.role === 'ADMIN' ? 'Администратор' : user.role === 'EXTERNAL' ? 'Внешний' : 'Сотрудник'}
+                        {user.role === 'ADMIN' ? t('admin.users.administrator') : user.role === 'EXTERNAL' ? t('admin.users.external') : t('admin.users.employee')}
                       </Badge>
                     </td>
                     <td className="p-4">
                       <Badge variant={user.isActive ? 'success' : 'destructive'}>
-                        {user.isActive ? 'Активен' : 'Заблокирован'}
+                        {user.isActive ? t('admin.users.active') : t('admin.users.blocked')}
                       </Badge>
                     </td>
                     <td className="p-4 text-muted-foreground">
                       {user.lastLoginAt
-                        ? new Date(user.lastLoginAt).toLocaleString('ru-RU')
-                        : 'Не входил'}
+                        ? new Date(user.lastLoginAt).toLocaleString(locale)
+                        : t('admin.users.neverLoggedIn')}
                     </td>
                     <td className="p-4 text-xs text-muted-foreground">
-                      Озн: {user._count?.acknowledgments || 0}
+                      {t('admin.users.ack')} {user._count?.acknowledgments || 0}
                       <br />
-                      Тесты: {user._count?.testAttempts || 0}
+                      {t('admin.users.testsLabel')} {user._count?.testAttempts || 0}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex gap-1 justify-end">
@@ -284,7 +284,7 @@ export default function UserManagement() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(user)}
-                          title="Редактировать"
+                          title={t('admin.users.edit')}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -297,7 +297,7 @@ export default function UserManagement() {
                               data: { role: user.role === 'ADMIN' ? 'EMPLOYEE' : 'ADMIN' },
                             })
                           }
-                          title={user.role === 'ADMIN' ? 'Снять админа' : 'Назначить админом'}
+                          title={user.role === 'ADMIN' ? t('admin.users.removeAdmin') : t('admin.users.assignAdmin')}
                         >
                           {user.role === 'ADMIN' ? (
                             <ShieldOff className="h-4 w-4" />
@@ -314,7 +314,7 @@ export default function UserManagement() {
                               data: { isActive: !user.isActive },
                             })
                           }
-                          title={user.isActive ? 'Заблокировать' : 'Разблокировать'}
+                          title={user.isActive ? t('admin.users.block') : t('admin.users.unblock')}
                         >
                           {user.isActive ? (
                             <UserX className="h-4 w-4 text-destructive" />
@@ -326,7 +326,7 @@ export default function UserManagement() {
                           variant="ghost"
                           size="icon"
                           onClick={() => setResetModal({ userId: user.id, userName: user.name })}
-                          title="Сбросить попытки теста"
+                          title={t('admin.users.resetAttempts')}
                         >
                           <RotateCcw className="h-4 w-4" />
                         </Button>
@@ -334,11 +334,11 @@ export default function UserManagement() {
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            if (confirm(`Удалить пользователя ${user.name}?`)) {
+                            if (confirm(t('admin.users.deleteConfirm', { name: user.name }))) {
                               deleteMutation.mutate(user.id);
                             }
                           }}
-                          title="Удалить"
+                          title={t('admin.users.delete')}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -352,13 +352,12 @@ export default function UserManagement() {
         </CardContent>
       </Card>
 
-      {/* Reset attempts modal */}
       {resetModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Сбросить попытки теста</CardTitle>
+                <CardTitle className="text-lg">{t('admin.users.resetAttemptsTitle')}</CardTitle>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -373,19 +372,19 @@ export default function UserManagement() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Сотрудник: <strong>{resetModal.userName}</strong>
+                {t('admin.users.employeeLabel')} <strong>{resetModal.userName}</strong>
               </p>
               <div className="space-y-2">
-                <Label>Выберите тест</Label>
+                <Label>{t('admin.users.selectTest')}</Label>
                 <select
                   value={selectedTestId}
                   onChange={(e) => setSelectedTestId(e.target.value)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="">-- Выберите тест --</option>
-                  {tests?.map((t: any) => (
-                    <option key={t.id} value={t.id}>
-                      {t.title}
+                  <option value="">{t('admin.users.selectTestPlaceholder')}</option>
+                  {tests?.map((t_: any) => (
+                    <option key={t_.id} value={t_.id}>
+                      {t_.title}
                     </option>
                   ))}
                 </select>
@@ -398,7 +397,7 @@ export default function UserManagement() {
                     setSelectedTestId('');
                   }}
                 >
-                  Отмена
+                  {t('admin.users.cancelBtn')}
                 </Button>
                 <Button
                   variant="destructive"
@@ -410,7 +409,7 @@ export default function UserManagement() {
                     })
                   }
                 >
-                  {resetMutation.isPending ? 'Сброс...' : 'Сбросить'}
+                  {resetMutation.isPending ? t('admin.users.resetting') : t('admin.users.reset')}
                 </Button>
               </div>
             </CardContent>
