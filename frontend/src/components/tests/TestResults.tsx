@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +9,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, CheckCircle2, XCircle, Trophy } from 'lucide-react';
 
 export default function TestResults() {
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
+  const locale = i18n.language === 'kk' ? 'kk-KZ' : 'ru-RU';
 
   const { data: history, isLoading } = useQuery({
     queryKey: ['test-history', id],
@@ -34,7 +37,7 @@ export default function TestResults() {
       <Link to="/tests">
         <Button variant="ghost" size="sm" className="gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Назад к тестам
+          {t('testResults.backToTests')}
         </Button>
       </Link>
 
@@ -49,7 +52,7 @@ export default function TestResults() {
               )}
             </div>
             <CardTitle className="text-2xl">
-              {latestAttempt.isPassed ? 'Тест сдан!' : 'Тест не сдан'}
+              {latestAttempt.isPassed ? t('testResults.testPassed') : t('testResults.testFailed')}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
@@ -57,7 +60,7 @@ export default function TestResults() {
               {latestAttempt.score}%
             </div>
             <Badge variant={latestAttempt.isPassed ? 'success' : 'destructive'} className="text-sm">
-              {latestAttempt.isPassed ? 'Зачёт' : 'Незачёт'}
+              {latestAttempt.isPassed ? t('testResults.pass') : t('testResults.fail')}
             </Badge>
           </CardContent>
         </Card>
@@ -66,11 +69,11 @@ export default function TestResults() {
       {/* History */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">История попыток</CardTitle>
+          <CardTitle className="text-lg">{t('testResults.attemptHistory')}</CardTitle>
         </CardHeader>
         <CardContent>
           {!history || history.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">Нет попыток</p>
+            <p className="text-muted-foreground text-center py-4">{t('testResults.noAttempts')}</p>
           ) : (
             <div className="space-y-3">
               {history.map((attempt: any, i: number) => (
@@ -86,17 +89,17 @@ export default function TestResults() {
                     )}
                     <div>
                       <p className="text-sm font-medium">
-                        Попытка {history.length - i}
+                        {t('testResults.attempt', { num: history.length - i })}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(attempt.completedAt).toLocaleString('ru-RU')}
+                        {new Date(attempt.completedAt).toLocaleString(locale)}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-bold">{attempt.score}%</p>
                     <Badge variant={attempt.isPassed ? 'success' : 'destructive'} className="text-xs">
-                      {attempt.isPassed ? 'Сдан' : 'Не сдан'}
+                      {attempt.isPassed ? t('testResults.passed') : t('testResults.failed')}
                     </Badge>
                   </div>
                 </div>

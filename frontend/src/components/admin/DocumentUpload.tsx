@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Upload, FileText, Eye, EyeOff, Pencil, ClipboardCheck, Trash2, Paperclip, AlertTriangle } from 'lucide-react';
 
-const categories = [
+const categoryKeys = [
   'Политика ИБ',
   'Регламент ИБ',
   'Правила',
@@ -22,6 +23,7 @@ const categories = [
 ];
 
 export default function DocumentUpload() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [showForm, setShowForm] = useState(false);
@@ -29,7 +31,7 @@ export default function DocumentUpload() {
   const [pendingAction, setPendingAction] = useState<'draft' | 'publish' | null>(null);
   const [form, setForm] = useState({
     title: '',
-    category: categories[0],
+    category: categoryKeys[0],
     version: '1.0',
     description: '',
   });
@@ -71,13 +73,13 @@ export default function DocumentUpload() {
       }
     },
     onSuccess: (_, publish) => {
-      toast.success(publish ? 'Документ опубликован' : editingId ? 'Документ обновлён' : 'Черновик сохранён');
+      toast.success(publish ? t('admin.documents.docPublished') : editingId ? t('admin.documents.docUpdated') : t('admin.documents.draftSaved'));
       queryClient.invalidateQueries({ queryKey: ['admin', 'documents'] });
       setPendingAction(null);
       resetForm();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка загрузки');
+      toast.error(err.response?.data?.error || t('admin.documents.uploadError'));
       setPendingAction(null);
     },
   });
@@ -88,11 +90,11 @@ export default function DocumentUpload() {
       return res.data;
     },
     onSuccess: (_, vars) => {
-      toast.success(vars.isPublished ? 'Документ опубликован' : 'Документ снят с публикации');
+      toast.success(vars.isPublished ? t('admin.documents.docPublished') : t('admin.documents.docUnpublished'));
       queryClient.invalidateQueries({ queryKey: ['admin', 'documents'] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка');
+      toast.error(err.response?.data?.error || t('admin.users.error'));
     },
   });
 
@@ -102,22 +104,22 @@ export default function DocumentUpload() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Документ удалён');
+      toast.success(t('admin.documents.docDeleted'));
       queryClient.invalidateQueries({ queryKey: ['admin', 'documents'] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка удаления');
+      toast.error(err.response?.data?.error || t('admin.documents.deleteError'));
     },
   });
 
   const handleDelete = (doc: any) => {
-    if (window.confirm(`Удалить документ «${doc.title}»? Это действие необратимо — будут удалены все связанные ознакомления и тесты.`)) {
+    if (window.confirm(t('admin.documents.deleteConfirm', { title: doc.title }))) {
       deleteMutation.mutate(doc.id);
     }
   };
 
   const resetForm = () => {
-    setForm({ title: '', category: categories[0], version: '1.0', description: '' });
+    setForm({ title: '', category: categoryKeys[0], version: '1.0', description: '' });
     setFile(null);
     setEditingId(null);
     setEditingDoc(null);
@@ -149,14 +151,14 @@ export default function DocumentUpload() {
     if (droppedFile && ALLOWED_TYPES.includes(droppedFile.type)) {
       setFile(droppedFile);
     } else {
-      toast.error('Допускаются только PDF и Word файлы (.pdf, .doc, .docx)');
+      toast.error(t('admin.documents.onlyPdfWord'));
     }
   };
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">Управление документами</h1>
+        <h1 className="text-2xl font-bold">{t('admin.documents.title')}</h1>
         <Skeleton className="h-[400px] w-full" />
       </div>
     );
@@ -165,45 +167,44 @@ export default function DocumentUpload() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Управление документами</h1>
+        <h1 className="text-2xl font-bold">{t('admin.documents.title')}</h1>
         <Button onClick={() => { resetForm(); setShowForm(!showForm); }} className="gap-2">
           <Upload className="h-4 w-4" />
-          {showForm ? 'Скрыть форму' : 'Загрузить документ'}
+          {showForm ? t('admin.documents.hideForm') : t('admin.documents.upload')}
         </Button>
       </div>
 
-      {/* Upload form */}
       {showForm && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
-              {editingId ? 'Редактирование документа' : 'Новый документ'}
+              {editingId ? t('admin.documents.editDocument') : t('admin.documents.newDocument')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>Название *</Label>
+                <Label>{t('admin.documents.nameLabel')}</Label>
                 <Input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="Название документа"
+                  placeholder={t('admin.documents.namePlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Категория</Label>
+                <Label>{t('admin.documents.category')}</Label>
                 <select
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  {categories.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                  {categoryKeys.map((c) => (
+                    <option key={c} value={c}>{t(`admin.categories.${c}`)}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>Версия</Label>
+                <Label>{t('admin.documents.version')}</Label>
                 <Input
                   value={form.version}
                   onChange={(e) => setForm({ ...form, version: e.target.value })}
@@ -211,16 +212,16 @@ export default function DocumentUpload() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Описание</Label>
+                <Label>{t('admin.documents.description')}</Label>
                 <Textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Краткое описание документа"
+                  placeholder={t('admin.documents.descPlaceholder')}
                   rows={1}
                 />
               </div>
               <div className="md:col-span-2 space-y-2">
-                <Label>Файл (PDF или Word) {!editingId && '*'}</Label>
+                <Label>{t('admin.documents.fileLabel')} {!editingId && '*'}</Label>
 
                 {editingDoc && !file && (
                   <div className={`rounded-lg border p-3 flex items-center gap-3 ${
@@ -232,10 +233,10 @@ export default function DocumentUpload() {
                       <>
                         <Paperclip className="h-4 w-4 text-green-600 shrink-0" />
                         <div className="text-sm">
-                          <span className="font-medium text-green-700 dark:text-green-400">Файл прикреплён: </span>
+                          <span className="font-medium text-green-700 dark:text-green-400">{t('admin.documents.fileAttached')} </span>
                           <span className="text-green-600 dark:text-green-500">{editingDoc.fileName}</span>
                           <span className="text-green-500 dark:text-green-600 ml-1">
-                            ({(editingDoc.fileSize / 1024 / 1024).toFixed(2)} МБ)
+                            ({(editingDoc.fileSize / 1024 / 1024).toFixed(2)} {t('admin.documents.mb')})
                           </span>
                         </div>
                       </>
@@ -243,8 +244,8 @@ export default function DocumentUpload() {
                       <>
                         <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0" />
                         <div className="text-sm">
-                          <span className="font-medium text-orange-700 dark:text-orange-400">Файл не прикреплён. </span>
-                          <span className="text-orange-600 dark:text-orange-500">Загрузите файл документа ниже.</span>
+                          <span className="font-medium text-orange-700 dark:text-orange-400">{t('admin.documents.fileNotAttached')} </span>
+                          <span className="text-orange-600 dark:text-orange-500">{t('admin.documents.uploadFileBelow')}</span>
                         </div>
                       </>
                     )}
@@ -270,55 +271,54 @@ export default function DocumentUpload() {
                   {file ? (
                     <p className="text-sm">
                       <FileText className="h-5 w-5 inline mr-2" />
-                      {file.name} ({(file.size / 1024 / 1024).toFixed(1)} МБ)
+                      {file.name} ({(file.size / 1024 / 1024).toFixed(1)} {t('admin.documents.mb')})
                     </p>
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       {editingDoc
-                        ? 'Перетащите новый файл или нажмите для замены'
-                        : 'Перетащите файл сюда или нажмите для выбора'}
+                        ? t('admin.documents.dragReplace')
+                        : t('admin.documents.dragSelect')}
                       <br />
-                      <span className="text-xs">PDF, DOC, DOCX — максимум 50 МБ</span>
+                      <span className="text-xs">{t('admin.documents.fileFormats')}</span>
                       <br />
-                      <span className="text-xs text-muted-foreground">Word-файлы автоматически конвертируются в PDF</span>
+                      <span className="text-xs text-muted-foreground">{t('admin.documents.wordAutoConvert')}</span>
                     </p>
                   )}
                 </div>
               </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Button variant="outline" onClick={resetForm}>Отмена</Button>
+              <Button variant="outline" onClick={resetForm}>{t('admin.documents.cancelBtn')}</Button>
               <Button
                 variant="secondary"
                 onClick={() => { setPendingAction('draft'); uploadMutation.mutate(false); }}
                 disabled={uploadMutation.isPending || (!editingId && (!form.title || !file))}
               >
-                {pendingAction === 'draft' && uploadMutation.isPending ? 'Сохранение...' : 'Сохранить как черновик'}
+                {pendingAction === 'draft' && uploadMutation.isPending ? t('admin.documents.saving') : t('admin.documents.saveDraft')}
               </Button>
               <Button
                 onClick={() => { setPendingAction('publish'); uploadMutation.mutate(true); }}
                 disabled={uploadMutation.isPending || (!editingId && (!form.title || !file))}
               >
-                {pendingAction === 'publish' && uploadMutation.isPending ? 'Публикация...' : 'Опубликовать'}
+                {pendingAction === 'publish' && uploadMutation.isPending ? t('admin.documents.publishing') : t('admin.documents.publish')}
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Documents table */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="text-left p-4 font-medium">Документ</th>
-                  <th className="text-left p-4 font-medium">Категория</th>
-                  <th className="text-left p-4 font-medium">Версия</th>
-                  <th className="text-left p-4 font-medium">Статус</th>
-                  <th className="text-left p-4 font-medium">Ознакомлений</th>
-                  <th className="text-right p-4 font-medium">Действия</th>
+                  <th className="text-left p-4 font-medium">{t('admin.documents.document')}</th>
+                  <th className="text-left p-4 font-medium">{t('admin.documents.categoryCol')}</th>
+                  <th className="text-left p-4 font-medium">{t('admin.documents.versionCol')}</th>
+                  <th className="text-left p-4 font-medium">{t('admin.documents.statusCol')}</th>
+                  <th className="text-left p-4 font-medium">{t('admin.documents.ackCount')}</th>
+                  <th className="text-right p-4 font-medium">{t('admin.documents.actionsCol')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -332,16 +332,16 @@ export default function DocumentUpload() {
                         ) : (
                           <AlertTriangle className="h-3 w-3 text-orange-500" />
                         )}
-                        {doc.fileSize > 0 ? doc.fileName : 'Файл не прикреплён'}
+                        {doc.fileSize > 0 ? doc.fileName : t('admin.documents.noFile')}
                       </p>
                     </td>
                     <td className="p-4">
-                      <Badge variant="secondary">{doc.category}</Badge>
+                      <Badge variant="secondary">{t(`admin.categories.${doc.category}`)}</Badge>
                     </td>
                     <td className="p-4">v{doc.version}</td>
                     <td className="p-4">
                       <Badge variant={doc.isPublished ? 'success' : 'outline'}>
-                        {doc.isPublished ? 'Опубликован' : 'Черновик'}
+                        {doc.isPublished ? t('admin.documents.published') : t('admin.documents.draft')}
                       </Badge>
                     </td>
                     <td className="p-4">{doc._count?.acknowledgments || 0}</td>
@@ -351,7 +351,7 @@ export default function DocumentUpload() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(doc)}
-                          title="Редактировать"
+                          title={t('admin.documents.editBtn')}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -364,7 +364,7 @@ export default function DocumentUpload() {
                               isPublished: !doc.isPublished,
                             })
                           }
-                          title={doc.isPublished ? 'Снять с публикации' : 'Опубликовать'}
+                          title={doc.isPublished ? t('admin.documents.unpublishBtn') : t('admin.documents.publishBtn')}
                         >
                           {doc.isPublished ? (
                             <EyeOff className="h-4 w-4" />
@@ -374,14 +374,14 @@ export default function DocumentUpload() {
                         </Button>
                         {doc._count?.tests === 0 && (
                           <Link to={`/admin/tests/${doc.id}`}>
-                            <Button variant="ghost" size="icon" title="Создать тест">
+                            <Button variant="ghost" size="icon" title={t('admin.documents.createTest')}>
                               <ClipboardCheck className="h-4 w-4" />
                             </Button>
                           </Link>
                         )}
                         {doc._count?.tests > 0 && (
                           <Link to={`/admin/tests/${doc.id}`}>
-                            <Button variant="ghost" size="icon" title="Редактировать тест">
+                            <Button variant="ghost" size="icon" title={t('admin.documents.editTest')}>
                               <ClipboardCheck className="h-4 w-4 text-primary" />
                             </Button>
                           </Link>
@@ -391,7 +391,7 @@ export default function DocumentUpload() {
                           size="icon"
                           onClick={() => handleDelete(doc)}
                           disabled={deleteMutation.isPending}
-                          title="Удалить"
+                          title={t('admin.documents.deleteBtn')}
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />

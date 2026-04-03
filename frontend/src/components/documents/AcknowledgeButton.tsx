@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useAcknowledge } from '@/hooks/useDocuments';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -9,13 +10,14 @@ interface Props {
 }
 
 export default function AcknowledgeButton({ documentId, ackStatus }: Props) {
+  const { t } = useTranslation();
   const { mutate, isPending } = useAcknowledge();
 
   if (ackStatus === 'acknowledged') {
     return (
       <Button variant="outline" disabled className="gap-2">
         <Check className="h-4 w-4 text-green-600" />
-        Ознакомлен
+        {t('acknowledge.done')}
       </Button>
     );
   }
@@ -23,10 +25,10 @@ export default function AcknowledgeButton({ documentId, ackStatus }: Props) {
   const handleAcknowledge = () => {
     mutate(documentId, {
       onSuccess: () => {
-        toast.success('Ознакомление подтверждено');
+        toast.success(t('acknowledge.confirmed'));
       },
       onError: (err: any) => {
-        toast.error(err.response?.data?.error || 'Ошибка при подтверждении');
+        toast.error(err.response?.data?.error || t('acknowledge.error'));
       },
     });
   };
@@ -34,7 +36,7 @@ export default function AcknowledgeButton({ documentId, ackStatus }: Props) {
   return (
     <Button onClick={handleAcknowledge} disabled={isPending} className="gap-2">
       {ackStatus === 'outdated' && <AlertCircle className="h-4 w-4" />}
-      {isPending ? 'Подтверждение...' : 'Подтвердить ознакомление'}
+      {isPending ? t('acknowledge.confirming') : t('acknowledge.confirm')}
     </Button>
   );
 }

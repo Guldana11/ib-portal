@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Clock, ChevronLeft, ChevronRight, Send, CheckCircle2, XCircle, Trophy, 
 import { Badge } from '@/components/ui/badge';
 
 export default function TestRunner() {
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -21,6 +23,8 @@ export default function TestRunner() {
   const [submitResult, setSubmitResult] = useState<any>(null);
 
   const [shuffledQuestions, setShuffledQuestions] = useState<any[] | null>(null);
+
+  const locale = i18n.language === 'kk' ? 'kk-KZ' : 'ru-RU';
 
   const { data: test, isLoading } = useQuery({
     queryKey: ['test', id],
@@ -44,11 +48,11 @@ export default function TestRunner() {
       await api.delete(`/api/tests/${id}/cancel-attempt?attemptId=${attemptIdToCancel}`);
     },
     onSuccess: () => {
-      toast.success('Попытка отменена');
+      toast.success(t('testRunner.attemptCancelled'));
       refetchInProgress();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка отмены');
+      toast.error(err.response?.data?.error || t('testRunner.cancelError'));
     },
   });
 
@@ -76,7 +80,7 @@ export default function TestRunner() {
       }
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Не удалось начать тест');
+      toast.error(err.response?.data?.error || t('testRunner.startError'));
     },
   });
 
@@ -96,7 +100,7 @@ export default function TestRunner() {
       setSubmitResult(data);
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Ошибка при отправке теста');
+      toast.error(err.response?.data?.error || t('testRunner.submitError'));
     },
   });
 
@@ -138,7 +142,7 @@ export default function TestRunner() {
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">
-          Тест не найден
+          {t('testRunner.notFound')}
         </CardContent>
       </Card>
     );
@@ -158,18 +162,18 @@ export default function TestRunner() {
               )}
             </div>
             <CardTitle className="text-2xl">
-              {submitResult.isPassed ? 'Тест сдан!' : 'Тест не сдан'}
+              {submitResult.isPassed ? t('testRunner.testPassed') : t('testRunner.testFailed')}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <div className="text-4xl font-bold">{submitResult.score}%</div>
             <Badge variant={submitResult.isPassed ? 'success' : 'destructive'} className="text-sm">
-              {submitResult.isPassed ? 'Зачёт' : 'Незачёт'}
+              {submitResult.isPassed ? t('testRunner.pass') : t('testRunner.fail')}
             </Badge>
           </CardContent>
         </Card>
 
-        <h2 className="text-lg font-semibold">Разбор ответов</h2>
+        <h2 className="text-lg font-semibold">{t('testRunner.answerReview')}</h2>
 
         {activeQuestions.map((q: any, i: number) => {
           const result = submitResult.answers?.find((a: any) => a.questionId === q.id);
@@ -183,7 +187,9 @@ export default function TestRunner() {
                   ) : (
                     <XCircle className="h-5 w-5 text-destructive shrink-0" />
                   )}
-                  <span className="text-sm font-medium text-muted-foreground">Вопрос {i + 1}</span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {t('testRunner.question', { num: i + 1 })}
+                  </span>
                 </div>
                 <CardTitle className="text-base mt-1">{q.text}</CardTitle>
               </CardHeader>
@@ -205,13 +211,13 @@ export default function TestRunner() {
                       <span>{opt.text}</span>
                       <span className="text-xs ml-2 shrink-0">
                         {isCorrectOption && wasSelected && (
-                          <span className="text-green-600 font-medium">✓ Верно</span>
+                          <span className="text-green-600 font-medium">{t('testRunner.correct')}</span>
                         )}
                         {isCorrectOption && !wasSelected && (
-                          <span className="text-green-600 font-medium">✓ Правильный ответ</span>
+                          <span className="text-green-600 font-medium">{t('testRunner.correctAnswer')}</span>
                         )}
                         {!isCorrectOption && wasSelected && (
-                          <span className="text-red-600 font-medium">✗ Ваш ответ</span>
+                          <span className="text-red-600 font-medium">{t('testRunner.yourAnswer')}</span>
                         )}
                       </span>
                     </div>
@@ -219,7 +225,7 @@ export default function TestRunner() {
                 })}
                 {result?.explanation && (
                   <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm">
-                    <span className="font-medium text-blue-700">Пояснение: </span>
+                    <span className="font-medium text-blue-700">{t('testRunner.explanation')} </span>
                     <span className="text-blue-900">{result.explanation}</span>
                   </div>
                 )}
@@ -231,10 +237,10 @@ export default function TestRunner() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => navigate('/tests')} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
-            К списку тестов
+            {t('testRunner.toTestList')}
           </Button>
           <Button onClick={() => navigate(`/tests/${id}/results`)}>
-            История попыток
+            {t('testRunner.attemptHistory')}
           </Button>
         </div>
       </div>
@@ -253,30 +259,30 @@ export default function TestRunner() {
             {test.description && <p className="text-muted-foreground">{test.description}</p>}
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-muted-foreground">Вопросов</p>
+                <p className="text-muted-foreground">{t('testRunner.questionsCount')}</p>
                 <p className="font-medium text-lg">{test.questions.length}</p>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-muted-foreground">Проходной балл</p>
+                <p className="text-muted-foreground">{t('testRunner.passingScore')}</p>
                 <p className="font-medium text-lg">{test.passingScore}%</p>
               </div>
               {test.timeLimit && (
                 <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-muted-foreground">Ограничение времени</p>
-                  <p className="font-medium text-lg">{test.timeLimit} мин</p>
+                  <p className="text-muted-foreground">{t('testRunner.timeLimit')}</p>
+                  <p className="font-medium text-lg">{test.timeLimit} {t('testRunner.min')}</p>
                 </div>
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              К документу: {test.document.title}
+              {t('testRunner.forDocument')} {test.document.title}
             </p>
 
             {inProgress ? (
               <div className="space-y-3">
                 <div className="rounded-md bg-amber-50 border border-amber-200 p-4 text-sm">
-                  <p className="font-medium text-amber-800">У вас есть незавершённая попытка</p>
+                  <p className="font-medium text-amber-800">{t('testRunner.incompleteAttempt')}</p>
                   <p className="text-amber-700 mt-1">
-                    Начата: {new Date(inProgress.startedAt).toLocaleString('ru-RU')}
+                    {t('testRunner.started')} {new Date(inProgress.startedAt).toLocaleString(locale)}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -288,7 +294,7 @@ export default function TestRunner() {
                     className="flex-1"
                     size="lg"
                   >
-                    Продолжить тест
+                    {t('testRunner.continueTest')}
                   </Button>
                   <Button
                     variant="outline"
@@ -296,7 +302,7 @@ export default function TestRunner() {
                     disabled={cancelMutation.isPending}
                     size="lg"
                   >
-                    {cancelMutation.isPending ? 'Отмена...' : 'Отменить попытку'}
+                    {cancelMutation.isPending ? t('testRunner.cancelling') : t('testRunner.cancelAttempt')}
                   </Button>
                 </div>
               </div>
@@ -307,7 +313,7 @@ export default function TestRunner() {
                 className="w-full"
                 size="lg"
               >
-                {startMutation.isPending ? 'Загрузка...' : 'Начать тест'}
+                {startMutation.isPending ? t('testRunner.loading') : t('testRunner.startTest')}
               </Button>
             )}
           </CardContent>
@@ -333,7 +339,7 @@ export default function TestRunner() {
         <div className="flex-1">
           <Progress value={(answeredCount / totalQuestions) * 100} />
           <p className="text-xs text-muted-foreground mt-1">
-            Отвечено: {answeredCount} из {totalQuestions}
+            {t('testRunner.answered', { answered: answeredCount, total: totalQuestions })}
           </p>
         </div>
         {timeLeft !== null && (
@@ -351,7 +357,7 @@ export default function TestRunner() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              Вопрос {currentQuestion + 1} из {totalQuestions}
+              {t('testRunner.questionOf', { current: currentQuestion + 1, total: totalQuestions })}
             </span>
           </div>
           <CardTitle className="text-lg mt-2">{question.text}</CardTitle>
@@ -390,7 +396,7 @@ export default function TestRunner() {
           className="gap-2"
         >
           <ChevronLeft className="h-4 w-4" />
-          Назад
+          {t('testRunner.back')}
         </Button>
 
         {currentQuestion < totalQuestions - 1 ? (
@@ -398,7 +404,7 @@ export default function TestRunner() {
             onClick={() => setCurrentQuestion((p) => Math.min(totalQuestions - 1, p + 1))}
             className="gap-2"
           >
-            Далее
+            {t('testRunner.next')}
             <ChevronRight className="h-4 w-4" />
           </Button>
         ) : (
@@ -406,20 +412,20 @@ export default function TestRunner() {
             {!showConfirm ? (
               <Button onClick={() => setShowConfirm(true)} className="gap-2">
                 <Send className="h-4 w-4" />
-                Завершить тест
+                {t('testRunner.finishTest')}
               </Button>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Вы уверены?</span>
+                <span className="text-sm text-muted-foreground">{t('testRunner.areYouSure')}</span>
                 <Button variant="outline" size="sm" onClick={() => setShowConfirm(false)}>
-                  Отмена
+                  {t('testRunner.cancel')}
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => submitMutation.mutate()}
                   disabled={submitMutation.isPending}
                 >
-                  {submitMutation.isPending ? 'Отправка...' : 'Подтвердить'}
+                  {submitMutation.isPending ? t('testRunner.sending') : t('testRunner.confirmBtn')}
                 </Button>
               </div>
             )}

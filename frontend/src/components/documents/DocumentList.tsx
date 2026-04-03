@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useDocuments } from '@/hooks/useDocuments';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,15 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, ChevronRight } from 'lucide-react';
 
-const statusMap = {
-  acknowledged: { label: 'Ознакомлен', variant: 'success' as const },
-  outdated: { label: 'Обновлён', variant: 'warning' as const },
-  pending: { label: 'Требует ознакомления', variant: 'destructive' as const },
-};
-
 export default function DocumentList() {
+  const { t } = useTranslation();
   const { data: documents, isLoading } = useDocuments();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const statusMap = {
+    acknowledged: { label: t('documents.acknowledged'), variant: 'success' as const },
+    outdated: { label: t('documents.updated'), variant: 'warning' as const },
+    pending: { label: t('documents.requiresAck'), variant: 'destructive' as const },
+  };
 
   const categories = useMemo((): string[] => {
     if (!documents) return [];
@@ -32,7 +34,7 @@ export default function DocumentList() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold">Документы</h1>
+        <h1 className="text-2xl font-bold">{t('documents.title')}</h1>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
@@ -48,9 +50,9 @@ export default function DocumentList() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Документы</h1>
+        <h1 className="text-2xl font-bold">{t('documents.title')}</h1>
         <p className="text-muted-foreground mt-1">
-          Регламенты и политики информационной безопасности
+          {t('documents.subtitle')}
         </p>
       </div>
 
@@ -61,7 +63,7 @@ export default function DocumentList() {
             size="sm"
             onClick={() => setSelectedCategory(null)}
           >
-            Все
+            {t('documents.all')}
           </Button>
           {categories.map((cat) => (
             <Button
@@ -80,8 +82,8 @@ export default function DocumentList() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             {documents?.length === 0
-              ? 'Документы пока не опубликованы'
-              : 'Нет документов в выбранной категории'}
+              ? t('documents.noPublished')
+              : t('documents.noInCategory')}
           </CardContent>
         </Card>
       )}
