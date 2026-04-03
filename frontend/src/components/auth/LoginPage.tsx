@@ -1,19 +1,27 @@
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield } from 'lucide-react';
 
-const errorMessages: Record<string, string> = {
-  USER_BLOCKED: 'Ваш аккаунт заблокирован. Обратитесь к администратору.',
-  DOMAIN_NOT_ALLOWED: 'Вход разрешён только для корпоративных аккаунтов.',
-  auth_failed: 'Ошибка авторизации. Попробуйте ещё раз.',
-};
-
 export default function LoginPage() {
+  const { t, i18n } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const error = searchParams.get('error');
+
+  const errorMessages: Record<string, string> = {
+    USER_BLOCKED: t('login.errorBlocked'),
+    DOMAIN_NOT_ALLOWED: t('login.errorDomain'),
+    auth_failed: t('login.errorAuth'),
+  };
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'ru' ? 'kk' : 'ru';
+    i18n.changeLanguage(newLang);
+    localStorage.setItem('language', newLang);
+  };
 
   if (isLoading) return null;
   if (isAuthenticated) return <Navigate to="/documents" replace />;
@@ -22,24 +30,33 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
+          <div className="flex justify-end">
+            <Button variant="ghost" size="sm" onClick={toggleLanguage} className="text-xs gap-1">
+              {i18n.language === 'ru' ? (
+                <><span className="font-bold">РУС</span><span className="text-muted-foreground">|</span><span>ҚАЗ</span></>
+              ) : (
+                <><span>РУС</span><span className="text-muted-foreground">|</span><span className="font-bold">ҚАЗ</span></>
+              )}
+            </Button>
+          </div>
           <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
             <Shield className="h-8 w-8 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-xl">Crystal Spring</CardTitle>
+            <CardTitle className="text-xl">{t('login.title')}</CardTitle>
             <CardDescription className="mt-2">
-              Портал информационной безопасности
+              {t('login.subtitle')}
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
             <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive text-center">
-              {errorMessages[error] || 'Произошла ошибка. Попробуйте ещё раз.'}
+              {errorMessages[error] || t('login.errorGeneric')}
             </div>
           )}
           <p className="text-sm text-muted-foreground text-center">
-            Система ознакомления сотрудников с регламентами по информационной безопасности
+            {t('login.description')}
           </p>
           <a href="/auth/google" className="block">
             <Button className="w-full h-11 gap-3" size="lg">
@@ -61,16 +78,16 @@ export default function LoginPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Войти через Google
+              {t('login.googleBtn')}
             </Button>
           </a>
           <a href="/auth/dev-users" className="block">
             <Button variant="outline" className="w-full" size="sm">
-              Dev: войти без Google OAuth
+              {t('login.devBtn')}
             </Button>
           </a>
           <p className="text-xs text-center text-muted-foreground">
-            Доступ только для сотрудников с корпоративной почтой
+            {t('login.accessNote')}
           </p>
         </CardContent>
       </Card>

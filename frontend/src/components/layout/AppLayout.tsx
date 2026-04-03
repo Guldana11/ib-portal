@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,22 +17,29 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const employeeNav = [
-  { path: '/documents', label: 'Документы', icon: FileText },
-  { path: '/tests', label: 'Тесты', icon: ClipboardCheck },
-];
-
-const adminNav = [
-  { path: '/admin', label: 'Панель управления', icon: LayoutDashboard },
-  { path: '/admin/documents', label: 'Загрузка документов', icon: Upload },
-  { path: '/admin/users', label: 'Пользователи', icon: Users },
-  { path: '/admin/reports', label: 'Отчёты', icon: BarChart3 },
-];
-
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { t, i18n } = useTranslation();
   const { user, isAdmin, logout } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'ru' ? 'kk' : 'ru';
+    i18n.changeLanguage(newLang);
+    localStorage.setItem('language', newLang);
+  };
+
+  const employeeNav = [
+    { path: '/documents', label: t('nav.documents'), icon: FileText },
+    { path: '/tests', label: t('nav.tests'), icon: ClipboardCheck },
+  ];
+
+  const adminNav = [
+    { path: '/admin', label: t('nav.dashboard'), icon: LayoutDashboard },
+    { path: '/admin/documents', label: t('nav.uploadDocs'), icon: Upload },
+    { path: '/admin/users', label: t('nav.users'), icon: Users },
+    { path: '/admin/reports', label: t('nav.reports'), icon: BarChart3 },
+  ];
 
   const navItems = [...employeeNav, ...(isAdmin ? adminNav : [])];
 
@@ -48,7 +56,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform lg:translate-x-0 lg:static lg:z-auto',
+          'fixed inset-y-0 left-0 z-50 w-72 bg-white border-r transform transition-transform lg:translate-x-0 lg:static lg:z-auto',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -56,12 +64,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Logo */}
           <div className="flex items-center gap-3 px-6 py-5 border-b">
             <Shield className="h-8 w-8 text-primary" />
-            <div>
+            <div className="flex-1">
               <h1 className="font-bold text-sm">Crystal Spring</h1>
-              <p className="text-xs text-muted-foreground">Портал ИБ</p>
+              <p className="text-xs text-muted-foreground">{t('nav.portal')}</p>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleLanguage}
+              className="text-xs gap-1 px-2"
+            >
+              {i18n.language === 'ru' ? (
+                <><span className="font-bold">РУС</span><span className="text-muted-foreground">|</span><span>ҚАЗ</span></>
+              ) : (
+                <><span>РУС</span><span className="text-muted-foreground">|</span><span className="font-bold">ҚАЗ</span></>
+              )}
+            </Button>
             <button
-              className="lg:hidden ml-auto"
+              className="lg:hidden"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="h-5 w-5" />
@@ -110,7 +130,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <p className="text-sm font-medium truncate">{user?.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={logout} title="Выйти">
+              <Button variant="ghost" size="icon" onClick={logout} title={t('nav.logout')}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -127,8 +147,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-sm">Портал ИБ</span>
+            <span className="font-semibold text-sm">{t('nav.portal')}</span>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleLanguage}
+            className="ml-auto text-xs gap-1"
+          >
+            {i18n.language === 'ru' ? (
+              <><span className="font-bold">РУС</span><span className="text-muted-foreground">|</span><span>ҚАЗ</span></>
+            ) : (
+              <><span>РУС</span><span className="text-muted-foreground">|</span><span className="font-bold">ҚАЗ</span></>
+            )}
+          </Button>
         </header>
 
         <main className="flex-1 p-6 bg-gray-50/50">
