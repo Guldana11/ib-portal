@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
+import { localized } from '@/lib/localize';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -131,7 +132,7 @@ export default function ComplianceReport() {
               >
                 <option value="">{t('admin.reports.all')}</option>
                 {documents?.map((doc: any) => (
-                  <option key={doc.id} value={doc.id}>{doc.title}</option>
+                  <option key={doc.id} value={doc.id}>{localized(doc, 'title')}</option>
                 ))}
               </select>
             </div>
@@ -230,7 +231,7 @@ export default function ComplianceReport() {
                     <tr key={i} className="border-b last:border-0 hover:bg-muted/30">
                       <td className="p-3 font-medium">{row.userName}</td>
                       <td className="p-3 text-muted-foreground">{row.userEmail}</td>
-                      <td className="p-3">{row.documentTitle}</td>
+                      <td className="p-3">{localized({ title: row.documentTitle, titleKk: row.documentTitleKk }, 'title')}</td>
                       <td className="p-3">v{row.documentVersion}</td>
                       <td className="p-3">
                         <Badge variant={row.ackStatus === 'acknowledged' ? 'success' : 'destructive'}>

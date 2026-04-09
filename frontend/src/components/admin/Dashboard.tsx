@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
+import { localized } from '@/lib/localize';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -110,7 +111,7 @@ export default function Dashboard() {
             {stats?.docAckStats?.map((doc: any) => (
               <div key={doc.documentId} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="truncate mr-2">{doc.title}</span>
+                  <span className="truncate mr-2">{localized(doc, 'title')}</span>
                   <span className="shrink-0 font-medium">{doc.ackPercent}%</span>
                 </div>
                 <Progress value={doc.ackPercent} className="h-2" />
@@ -146,7 +147,7 @@ export default function Dashboard() {
                           <p className="font-medium">{row.userName}</p>
                           <p className="text-xs text-muted-foreground">{row.userEmail}</p>
                         </td>
-                        <td className="py-2 text-sm">{row.testTitle}</td>
+                        <td className="py-2 text-sm">{localized({ title: row.testTitle, titleKk: row.testTitleKk }, 'title')}</td>
                         <td className="py-2">
                           {row.expiredAt ? (
                             <Badge variant="destructive">
