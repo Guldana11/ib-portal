@@ -14,8 +14,10 @@ import { Plus, Trash2, GripVertical, ArrowLeft, Save } from 'lucide-react';
 
 interface QuestionForm {
   text: string;
+  textKk: string;
   explanation: string;
-  options: { text: string; isCorrect: boolean }[];
+  explanationKk: string;
+  options: { text: string; textKk: string; isCorrect: boolean }[];
 }
 
 export default function QuestionEditor() {
@@ -58,9 +60,12 @@ export default function QuestionEditor() {
       setQuestions(
         existingTest.questions.map((q: any) => ({
           text: q.text,
+          textKk: q.textKk || '',
           explanation: q.explanation || '',
+          explanationKk: q.explanationKk || '',
           options: q.options.map((o: any) => ({
             text: o.text,
+            textKk: o.textKk || '',
             isCorrect: o.isCorrect,
           })),
         }))
@@ -101,10 +106,13 @@ export default function QuestionEditor() {
         periodDays: testSettings.periodDays,
         questions: questions.map((q, qi) => ({
           text: q.text,
+          textKk: q.textKk || null,
           orderIndex: qi,
           explanation: q.explanation || null,
+          explanationKk: q.explanationKk || null,
           options: q.options.map((o, oi) => ({
             text: o.text,
+            textKk: o.textKk || null,
             isCorrect: o.isCorrect,
             orderIndex: oi,
           })),
@@ -144,7 +152,7 @@ export default function QuestionEditor() {
   const addQuestion = () => {
     setQuestions([
       ...questions,
-      { text: '', explanation: '', options: [{ text: '', isCorrect: false }, { text: '', isCorrect: false }] },
+      { text: '', textKk: '', explanation: '', explanationKk: '', options: [{ text: '', textKk: '', isCorrect: false }, { text: '', textKk: '', isCorrect: false }] },
     ]);
   };
 
@@ -161,7 +169,7 @@ export default function QuestionEditor() {
   const addOption = (qIndex: number) => {
     if (questions[qIndex].options.length >= 6) return;
     const updated = [...questions];
-    updated[qIndex].options.push({ text: '', isCorrect: false });
+    updated[qIndex].options.push({ text: '', textKk: '', isCorrect: false });
     setQuestions(updated);
   };
 
@@ -311,13 +319,23 @@ export default function QuestionEditor() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{t('admin.questionEditor.questionText')}</Label>
-                  <Textarea
-                    value={question.text}
-                    onChange={(e) => updateQuestion(qi, 'text', e.target.value)}
-                    placeholder={t('admin.questionEditor.questionPlaceholder')}
-                  />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>{t('admin.questionEditor.questionText')} (рус)</Label>
+                    <Textarea
+                      value={question.text}
+                      onChange={(e) => updateQuestion(qi, 'text', e.target.value)}
+                      placeholder={t('admin.questionEditor.questionPlaceholder')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('admin.questionEditor.questionText')} (қаз)</Label>
+                    <Textarea
+                      value={question.textKk}
+                      onChange={(e) => updateQuestion(qi, 'textKk', e.target.value)}
+                      placeholder="Сұрақ мәтіні"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -336,13 +354,19 @@ export default function QuestionEditor() {
                         type="checkbox"
                         checked={option.isCorrect}
                         onChange={(e) => updateOption(qi, oi, 'isCorrect', e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary shrink-0"
                         title={t('admin.questionEditor.correctAnswer')}
                       />
                       <Input
                         value={option.text}
                         onChange={(e) => updateOption(qi, oi, 'text', e.target.value)}
-                        placeholder={t('admin.questionEditor.optionNum', { num: oi + 1 })}
+                        placeholder={`${t('admin.questionEditor.optionNum', { num: oi + 1 })} (рус)`}
+                        className="flex-1"
+                      />
+                      <Input
+                        value={option.textKk}
+                        onChange={(e) => updateOption(qi, oi, 'textKk', e.target.value)}
+                        placeholder={`${t('admin.questionEditor.optionNum', { num: oi + 1 })} (қаз)`}
                         className="flex-1"
                       />
                       {question.options.length > 2 && (
@@ -357,14 +381,25 @@ export default function QuestionEditor() {
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>{t('admin.questionEditor.explanationLabel')}</Label>
-                  <Textarea
-                    value={question.explanation}
-                    onChange={(e) => updateQuestion(qi, 'explanation', e.target.value)}
-                    placeholder={t('admin.questionEditor.explanationPlaceholder')}
-                    rows={2}
-                  />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>{t('admin.questionEditor.explanationLabel')} (рус)</Label>
+                    <Textarea
+                      value={question.explanation}
+                      onChange={(e) => updateQuestion(qi, 'explanation', e.target.value)}
+                      placeholder={t('admin.questionEditor.explanationPlaceholder')}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('admin.questionEditor.explanationLabel')} (қаз)</Label>
+                    <Textarea
+                      value={question.explanationKk}
+                      onChange={(e) => updateQuestion(qi, 'explanationKk', e.target.value)}
+                      placeholder="Түсіндірме"
+                      rows={2}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>

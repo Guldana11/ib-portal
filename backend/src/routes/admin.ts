@@ -329,12 +329,15 @@ const updateTestSchema = z.object({
       z.object({
         id: z.string().optional(),
         text: z.string().min(1),
+        textKk: z.string().nullable().optional(),
         orderIndex: z.number(),
         explanation: z.string().nullable().optional(),
+        explanationKk: z.string().nullable().optional(),
         options: z.array(
           z.object({
             id: z.string().optional(),
             text: z.string().min(1),
+            textKk: z.string().nullable().optional(),
             isCorrect: z.boolean(),
             orderIndex: z.number(),
           })
@@ -395,11 +398,14 @@ router.put('/tests/:id', async (req: Request, res: Response, next: NextFunction)
           data: {
             testId: test.id,
             text: q.text,
+            textKk: q.textKk,
             orderIndex: q.orderIndex,
             explanation: q.explanation,
+            explanationKk: q.explanationKk,
             options: {
               create: q.options.map((o) => ({
                 text: o.text,
+                textKk: o.textKk,
                 isCorrect: o.isCorrect,
                 orderIndex: o.orderIndex,
               })),

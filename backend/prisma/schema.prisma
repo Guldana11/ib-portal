@@ -87,11 +87,13 @@ model Test {
 }
 
 model Question {
-  id          String  @id @default(cuid())
-  testId      String
-  text        String
-  orderIndex  Int
-  explanation String?
+  id            String  @id @default(cuid())
+  testId        String
+  text          String
+  textKk        String?
+  orderIndex    Int
+  explanation   String?
+  explanationKk String?
 
   test    Test       @relation(fields: [testId], references: [id], onDelete: Cascade)
   options Option[]
@@ -102,6 +104,7 @@ model Option {
   id         String  @id @default(cuid())
   questionId String
   text       String
+  textKk     String?
   isCorrect  Boolean @default(false)
   orderIndex Int
 
