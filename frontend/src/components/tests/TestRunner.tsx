@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
+import { localized } from '@/lib/localize';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -253,7 +254,7 @@ export default function TestRunner() {
       <div className="max-w-2xl mx-auto space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>{test.title}</CardTitle>
+            <CardTitle>{localized(test, 'title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {test.description && <p className="text-muted-foreground">{test.description}</p>}
@@ -274,7 +275,7 @@ export default function TestRunner() {
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              {t('testRunner.forDocument')} {test.document.title}
+              {t('testRunner.forDocument')} {localized(test.document, 'title')}
             </p>
 
             {inProgress ? (

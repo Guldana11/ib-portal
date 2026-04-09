@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { localized } from '@/lib/localize';
 import { ClipboardCheck, ArrowRight } from 'lucide-react';
 
 export default function TestList() {
@@ -70,9 +71,9 @@ export default function TestList() {
                   <div className="flex items-start gap-3">
                     <ClipboardCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                     <div>
-                      <h3 className="font-medium">{test.title}</h3>
+                      <h3 className="font-medium">{localized(test, 'title')}</h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {t('tests.forDocument')} {test.document.title}
+                        {t('tests.forDocument')} {localized(test.document, 'title')}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
                         <Badge variant={status.variant}>{status.label}</Badge>
