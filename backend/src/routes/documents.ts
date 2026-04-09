@@ -39,7 +39,9 @@ router.get('/:id/file', isAuthenticated, async (req: Request, res: Response, nex
       return;
     }
 
-    const url = await getPresignedUrl(doc.fileKey);
+    const lang = req.query.lang as string | undefined;
+    const useKk = lang === 'kk' && doc.fileKeyKk;
+    const url = await getPresignedUrl(useKk ? doc.fileKeyKk! : doc.fileKey);
     await writeAuditLog({ userId: user.id, action: 'VIEW_DOC', entityId: doc.id, req });
     res.json({ url });
   } catch (err) {
