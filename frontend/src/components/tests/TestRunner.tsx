@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
+import { localized } from '@/lib/localize';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -191,7 +192,7 @@ export default function TestRunner() {
                     {t('testRunner.question', { num: i + 1 })}
                   </span>
                 </div>
-                <CardTitle className="text-base mt-1">{q.text}</CardTitle>
+                <CardTitle className="text-base mt-1">{localized(q, 'text')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {q.options.map((opt: any) => {
@@ -208,7 +209,7 @@ export default function TestRunner() {
                       key={opt.id}
                       className={`p-3 rounded-lg border text-sm flex items-center justify-between ${className}`}
                     >
-                      <span>{opt.text}</span>
+                      <span>{localized(opt, 'text')}</span>
                       <span className="text-xs ml-2 shrink-0">
                         {isCorrectOption && wasSelected && (
                           <span className="text-green-600 font-medium">{t('testRunner.correct')}</span>
@@ -226,7 +227,7 @@ export default function TestRunner() {
                 {result?.explanation && (
                   <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm">
                     <span className="font-medium text-blue-700">{t('testRunner.explanation')} </span>
-                    <span className="text-blue-900">{result.explanation}</span>
+                    <span className="text-blue-900">{localized(result, 'explanation')}</span>
                   </div>
                 )}
               </CardContent>
@@ -253,7 +254,7 @@ export default function TestRunner() {
       <div className="max-w-2xl mx-auto space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>{test.title}</CardTitle>
+            <CardTitle>{localized(test, 'title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {test.description && <p className="text-muted-foreground">{test.description}</p>}
@@ -274,7 +275,7 @@ export default function TestRunner() {
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              {t('testRunner.forDocument')} {test.document.title}
+              {t('testRunner.forDocument')} {localized(test.document, 'title')}
             </p>
 
             {inProgress ? (
@@ -360,7 +361,7 @@ export default function TestRunner() {
               {t('testRunner.questionOf', { current: currentQuestion + 1, total: totalQuestions })}
             </span>
           </div>
-          <CardTitle className="text-lg mt-2">{question.text}</CardTitle>
+          <CardTitle className="text-lg mt-2">{localized(question, 'text')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {question.options.map((option: any) => {
@@ -380,7 +381,7 @@ export default function TestRunner() {
                 }`}>
                   {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
                 </div>
-                <span className="text-sm">{option.text}</span>
+                <span className="text-sm">{localized(option, 'text')}</span>
               </button>
             );
           })}

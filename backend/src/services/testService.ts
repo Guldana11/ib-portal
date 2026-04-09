@@ -4,7 +4,7 @@ export async function getTestsForUser(userId: string) {
   const tests = await prisma.test.findMany({
     where: { isActive: true },
     include: {
-      document: { select: { id: true, title: true, version: true } },
+      document: { select: { id: true, title: true, titleKk: true, version: true } },
       attempts: {
         where: { userId },
         orderBy: { startedAt: 'desc' },
@@ -49,7 +49,7 @@ export async function getTestWithQuestions(testId: string) {
   return prisma.test.findUnique({
     where: { id: testId },
     include: {
-      document: { select: { id: true, title: true, version: true } },
+      document: { select: { id: true, title: true, titleKk: true, version: true } },
       questions: {
         orderBy: { orderIndex: 'asc' },
         include: {

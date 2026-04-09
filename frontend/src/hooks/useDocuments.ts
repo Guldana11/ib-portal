@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 
 export function useDocuments() {
@@ -23,10 +24,12 @@ export function useDocument(id: string) {
 }
 
 export function useDocumentFile(id: string) {
+  const { i18n } = useTranslation();
+  const lang = i18n.language;
   return useQuery({
-    queryKey: ['documents', id, 'file'],
+    queryKey: ['documents', id, 'file', lang],
     queryFn: async () => {
-      const res = await api.get(`/api/documents/${id}/file`);
+      const res = await api.get(`/api/documents/${id}/file`, { params: { lang } });
       return res.data.url;
     },
     enabled: !!id,

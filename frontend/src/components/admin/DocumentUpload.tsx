@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
+import { localized } from '@/lib/localize';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,11 +32,15 @@ export default function DocumentUpload() {
   const [pendingAction, setPendingAction] = useState<'draft' | 'publish' | null>(null);
   const [form, setForm] = useState({
     title: '',
+    titleKk: '',
     category: categoryKeys[0],
     version: '1.0',
     description: '',
+    descriptionKk: '',
   });
   const [file, setFile] = useState<File | null>(null);
+  const [fileKk, setFileKk] = useState<File | null>(null);
+  const fileKkRef = useRef<HTMLInputElement>(null);
   const [editingDoc, setEditingDoc] = useState<any>(null);
 
   const { data: documents, isLoading } = useQuery({
@@ -50,10 +55,13 @@ export default function DocumentUpload() {
     mutationFn: async (publish: boolean) => {
       const formData = new FormData();
       formData.append('title', form.title);
+      if (form.titleKk) formData.append('titleKk', form.titleKk);
       formData.append('category', form.category);
       formData.append('version', form.version);
       formData.append('description', form.description);
+      if (form.descriptionKk) formData.append('descriptionKk', form.descriptionKk);
       if (file) formData.append('file', file);
+      if (fileKk) formData.append('fileKk', fileKk);
 
       if (editingId) {
         if (publish) formData.append('isPublished', 'true');
@@ -119,20 +127,24 @@ export default function DocumentUpload() {
   };
 
   const resetForm = () => {
-    setForm({ title: '', category: categoryKeys[0], version: '1.0', description: '' });
+    setForm({ title: '', titleKk: '', category: categoryKeys[0], version: '1.0', description: '', descriptionKk: '' });
     setFile(null);
+    setFileKk(null);
     setEditingId(null);
     setEditingDoc(null);
     setShowForm(false);
     if (fileRef.current) fileRef.current.value = '';
+    if (fileKkRef.current) fileKkRef.current.value = '';
   };
 
   const handleEdit = (doc: any) => {
     setForm({
       title: doc.title,
+      titleKk: doc.titleKk || '',
       category: doc.category,
       version: doc.version,
       description: doc.description || '',
+      descriptionKk: doc.descriptionKk || '',
     });
     setEditingId(doc.id);
     setEditingDoc(doc);
@@ -184,11 +196,19 @@ export default function DocumentUpload() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>{t('admin.documents.nameLabel')}</Label>
+                <Label>{t('admin.documents.nameLabel')} (рус)</Label>
                 <Input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder={t('admin.documents.namePlaceholder')}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('admin.documents.nameLabel')} (қаз)</Label>
+                <Input
+                  value={form.titleKk}
+                  onChange={(e) => setForm({ ...form, titleKk: e.target.value })}
+                  placeholder="Құжат атауы"
                 />
               </div>
               <div className="space-y-2">
@@ -212,11 +232,20 @@ export default function DocumentUpload() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t('admin.documents.description')}</Label>
+                <Label>{t('admin.documents.description')} (рус)</Label>
                 <Textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder={t('admin.documents.descPlaceholder')}
+                  rows={1}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('admin.documents.description')} (қаз)</Label>
+                <Textarea
+                  value={form.descriptionKk}
+                  onChange={(e) => setForm({ ...form, descriptionKk: e.target.value })}
+                  placeholder="Құжаттың қысқаша сипаттамасы"
                   rows={1}
                 />
               </div>
@@ -286,6 +315,64 @@ export default function DocumentUpload() {
                   )}
                 </div>
               </div>
+              <div className="md:col-span-2 space-y-2">
+                <Label>{t('admin.documents.fileLabel')} (қаз)</Label>
+
+                {editingDoc && !fileKk && editingDoc.fileNameKk && (
+                  <div className="rounded-lg border p-3 flex items-center gap-3 bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800">
+                    <Paperclip className="h-4 w-4 text-green-600 shrink-0" />
+                    <div className="text-sm">
+                      <span className="font-medium text-green-700 dark:text-green-400">{t('admin.documents.fileAttached')} </span>
+                      <span className="text-green-600 dark:text-green-500">{editingDoc.fileNameKk}</span>
+                      {editingDoc.fileSizeKk && (
+                        <span className="text-green-500 dark:text-green-600 ml-1">
+                          ({(editingDoc.fileSizeKk / 1024 / 1024).toFixed(2)} {t('admin.documents.mb')})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const droppedFile = e.dataTransfer.files[0];
+                    if (droppedFile && ALLOWED_TYPES.includes(droppedFile.type)) {
+                      setFileKk(droppedFile);
+                    } else {
+                      toast.error(t('admin.documents.onlyPdfWord'));
+                    }
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                  onClick={() => fileKkRef.current?.click()}
+                >
+                  <input
+                    ref={fileKkRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) setFileKk(f);
+                    }}
+                  />
+                  {fileKk ? (
+                    <p className="text-sm">
+                      <FileText className="h-5 w-5 inline mr-2" />
+                      {fileKk.name} ({(fileKk.size / 1024 / 1024).toFixed(1)} {t('admin.documents.mb')})
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {editingDoc && editingDoc.fileNameKk
+                        ? t('admin.documents.dragReplace')
+                        : t('admin.documents.dragSelect')}
+                      <br />
+                      <span className="text-xs">{t('admin.documents.fileFormats')}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="flex gap-2 mt-4">
               <Button variant="outline" onClick={resetForm}>{t('admin.documents.cancelBtn')}</Button>
@@ -325,7 +412,7 @@ export default function DocumentUpload() {
                 {documents?.map((doc: any) => (
                   <tr key={doc.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="p-4">
-                      <p className="font-medium">{doc.title}</p>
+                      <p className="font-medium">{localized(doc, 'title')}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         {doc.fileSize > 0 ? (
                           <Paperclip className="h-3 w-3 text-green-600" />

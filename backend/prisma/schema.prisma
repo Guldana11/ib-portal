@@ -31,14 +31,19 @@ model User {
 }
 
 model Document {
-  id          String    @id @default(cuid())
-  title       String
-  description String?
-  version     String    @default("1.0")
-  category    String
+  id            String    @id @default(cuid())
+  title         String
+  titleKk       String?
+  description   String?
+  descriptionKk String?
+  version       String    @default("1.0")
+  category      String
   fileKey     String
   fileName    String
   fileSize    Int
+  fileKeyKk   String?
+  fileNameKk  String?
+  fileSizeKk  Int?
   isPublished Boolean   @default(false)
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -66,6 +71,7 @@ model Test {
   id           String   @id @default(cuid())
   documentId   String
   title        String
+  titleKk      String?
   description  String?
   passingScore Int      @default(80)
   timeLimit    Int?
@@ -81,11 +87,13 @@ model Test {
 }
 
 model Question {
-  id          String  @id @default(cuid())
-  testId      String
-  text        String
-  orderIndex  Int
-  explanation String?
+  id            String  @id @default(cuid())
+  testId        String
+  text          String
+  textKk        String?
+  orderIndex    Int
+  explanation   String?
+  explanationKk String?
 
   test    Test       @relation(fields: [testId], references: [id], onDelete: Cascade)
   options Option[]
@@ -96,6 +104,7 @@ model Option {
   id         String  @id @default(cuid())
   questionId String
   text       String
+  textKk     String?
   isCorrect  Boolean @default(false)
   orderIndex Int
 

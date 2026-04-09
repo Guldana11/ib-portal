@@ -44,15 +44,19 @@ function isWordFile(mimetype: string): boolean {
 
 const createDocSchema = z.object({
   title: z.string().min(1),
+  titleKk: z.string().optional(),
   category: z.string().min(1),
   version: z.string().default('1.0'),
   description: z.string().optional(),
+  descriptionKk: z.string().optional(),
 });
 
 const updateDocSchema = z.object({
   title: z.string().min(1).optional(),
+  titleKk: z.string().optional(),
   category: z.string().min(1).optional(),
   description: z.string().optional(),
+  descriptionKk: z.string().optional(),
   isPublished: z.preprocess((v) => {
     if (v === 'true') return true;
     if (v === 'false') return false;
@@ -75,12 +79,15 @@ router.get('/documents', async (req: Request, res: Response, next: NextFunction)
   }
 });
 
-router.post('/documents', upload.single('file'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/documents', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'fileKk', maxCount: 1 }]), async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('[POST /documents] body:', req.body);
-    console.log('[POST /documents] file:', req.file ? { name: req.file.originalname, size: req.file.size, mime: req.file.mimetype } : 'NO FILE');
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const file = files?.file?.[0];
+    const fileKk = files?.fileKk?.[0];
+    console.log('[POST /documents] file:', file ? { name: file.originalname, size: file.size, mime: file.mimetype } : 'NO FILE');
+    console.log('[POST /documents] fileKk:', fileKk ? { name: fileKk.originalname, size: fileKk.size, mime: fileKk.mimetype } : 'NO FILE');
     const parsed = createDocSchema.parse(req.body);
-    const file = req.file;
     if (!file) {
       res.status(400).json({ error: 'Файл обязателен', code: 'INVALID_FILE_TYPE' });
       return;
@@ -109,16 +116,41 @@ router.post('/documents', upload.single('file'), async (req: Request, res: Respo
 
     await uploadFile(fileKey, pdfBuffer, pdfSize, 'application/pdf');
 
+    // Казахская версия файла
+    let fileKeyKk: string | undefined;
+    let fileNameKk: string | undefined;
+    let fileSizeKk: number | undefined;
+
+    if (fileKk) {
+      let pdfBufferKk: Buffer;
+      if (isWordFile(fileKk.mimetype)) {
+        pdfBufferKk = await convertToPdf(fileKk.buffer, fileKk.originalname);
+        fileSizeKk = pdfBufferKk.length;
+      } else {
+        pdfBufferKk = fileKk.buffer;
+        fileSizeKk = fileKk.size;
+      }
+      const uidKk = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-kk`;
+      fileKeyKk = `documents/${uidKk}.pdf`;
+      fileNameKk = Buffer.from(fileKk.originalname, 'latin1').toString('utf-8');
+      await uploadFile(fileKeyKk, pdfBufferKk, fileSizeKk, 'application/pdf');
+    }
+
     const user = req.user as any;
     const doc = await prisma.document.create({
       data: {
         title: parsed.title,
+        titleKk: parsed.titleKk,
         category: parsed.category,
         version: parsed.version,
         description: parsed.description,
+        descriptionKk: parsed.descriptionKk,
         fileKey,
         fileName: originalName,
         fileSize: pdfSize,
+        fileKeyKk,
+        fileNameKk,
+        fileSizeKk,
         createdBy: user.email,
       },
     });
@@ -137,10 +169,14 @@ router.post('/documents', upload.single('file'), async (req: Request, res: Respo
   }
 });
 
-router.patch('/documents/:id', upload.single('file'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/documents/:id', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'fileKk', maxCount: 1 }]), async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const file = files?.file?.[0];
+    const fileKk = files?.fileKk?.[0];
     console.log('[PATCH /documents/:id] id:', req.params.id, 'body:', req.body);
-    console.log('[PATCH /documents/:id] file:', req.file ? { name: req.file.originalname, size: req.file.size, mime: req.file.mimetype } : 'NO FILE');
+    console.log('[PATCH /documents/:id] file:', file ? { name: file.originalname, size: file.size, mime: file.mimetype } : 'NO FILE');
+    console.log('[PATCH /documents/:id] fileKk:', fileKk ? { name: fileKk.originalname, size: fileKk.size, mime: fileKk.mimetype } : 'NO FILE');
     const parsed = updateDocSchema.parse(req.body);
     const existing = await prisma.document.findUnique({ where: { id: req.params.id } });
     if (!existing) {
@@ -151,13 +187,13 @@ router.patch('/documents/:id', upload.single('file'), async (req: Request, res: 
     const oldVersion = existing.version;
     const updateData: any = { ...parsed };
 
-    if (req.file) {
+    if (file) {
       let pdfBuffer: Buffer;
       let pdfSize: number;
 
-      if (isWordFile(req.file.mimetype)) {
+      if (isWordFile(file.mimetype)) {
         try {
-          pdfBuffer = await convertToPdf(req.file.buffer, req.file.originalname);
+          pdfBuffer = await convertToPdf(file.buffer, file.originalname);
           pdfSize = pdfBuffer.length;
         } catch (convErr) {
           console.error('PDF conversion failed:', convErr);
@@ -165,15 +201,40 @@ router.patch('/documents/:id', upload.single('file'), async (req: Request, res: 
           return;
         }
       } else {
-        pdfBuffer = req.file.buffer;
-        pdfSize = req.file.size;
+        pdfBuffer = file.buffer;
+        pdfSize = file.size;
       }
 
       const fileKey = `documents/${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}.pdf`;
       await uploadFile(fileKey, pdfBuffer, pdfSize, 'application/pdf');
       updateData.fileKey = fileKey;
-      updateData.fileName = Buffer.from(req.file.originalname, 'latin1').toString('utf-8');
+      updateData.fileName = Buffer.from(file.originalname, 'latin1').toString('utf-8');
       updateData.fileSize = pdfSize;
+    }
+
+    if (fileKk) {
+      let pdfBufferKk: Buffer;
+      let pdfSizeKk: number;
+
+      if (isWordFile(fileKk.mimetype)) {
+        try {
+          pdfBufferKk = await convertToPdf(fileKk.buffer, fileKk.originalname);
+          pdfSizeKk = pdfBufferKk.length;
+        } catch (convErr) {
+          console.error('PDF conversion (KK) failed:', convErr);
+          res.status(500).json({ error: 'Не удалось сконвертировать казахский файл в PDF', code: 'CONVERSION_ERROR' });
+          return;
+        }
+      } else {
+        pdfBufferKk = fileKk.buffer;
+        pdfSizeKk = fileKk.size;
+      }
+
+      const fileKeyKk = `documents/${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-kk.pdf`;
+      await uploadFile(fileKeyKk, pdfBufferKk, pdfSizeKk, 'application/pdf');
+      updateData.fileKeyKk = fileKeyKk;
+      updateData.fileNameKk = Buffer.from(fileKk.originalname, 'latin1').toString('utf-8');
+      updateData.fileSizeKk = pdfSizeKk;
     }
 
     if (parsed.isPublished === true && !existing.isPublished) {
@@ -246,6 +307,7 @@ router.delete('/documents/:id', async (req: Request, res: Response, next: NextFu
 const createTestSchema = z.object({
   documentId: z.string(),
   title: z.string().min(1),
+  titleKk: z.string().optional(),
   description: z.string().optional(),
   passingScore: z.number().min(1).max(100).default(80),
   timeLimit: z.number().nullable().optional(),
@@ -255,6 +317,7 @@ const createTestSchema = z.object({
 
 const updateTestSchema = z.object({
   title: z.string().min(1).optional(),
+  titleKk: z.string().optional(),
   description: z.string().optional(),
   passingScore: z.number().min(1).max(100).optional(),
   timeLimit: z.number().nullable().optional(),
@@ -266,12 +329,15 @@ const updateTestSchema = z.object({
       z.object({
         id: z.string().optional(),
         text: z.string().min(1),
+        textKk: z.string().nullable().optional(),
         orderIndex: z.number(),
         explanation: z.string().nullable().optional(),
+        explanationKk: z.string().nullable().optional(),
         options: z.array(
           z.object({
             id: z.string().optional(),
             text: z.string().min(1),
+            textKk: z.string().nullable().optional(),
             isCorrect: z.boolean(),
             orderIndex: z.number(),
           })
@@ -332,11 +398,14 @@ router.put('/tests/:id', async (req: Request, res: Response, next: NextFunction)
           data: {
             testId: test.id,
             text: q.text,
+            textKk: q.textKk,
             orderIndex: q.orderIndex,
             explanation: q.explanation,
+            explanationKk: q.explanationKk,
             options: {
               create: q.options.map((o) => ({
                 text: o.text,
+                textKk: o.textKk,
                 isCorrect: o.isCorrect,
                 orderIndex: o.orderIndex,
               })),
@@ -601,6 +670,7 @@ router.get('/reports/compliance', async (req: Request, res: Response, next: Next
           userName: user.name,
           userEmail: user.email,
           documentTitle: doc.title,
+          documentTitleKk: doc.titleKk || null,
           documentVersion: doc.version,
           ackStatus,
           ackDate: ack?.createdAt || null,
@@ -788,7 +858,7 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
     // % ознакомления по каждому документу
     const documents = await prisma.document.findMany({
       where: { isPublished: true },
-      select: { id: true, title: true, version: true },
+      select: { id: true, title: true, titleKk: true, version: true },
     });
 
     const docAckStats = [];
@@ -799,6 +869,7 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
       docAckStats.push({
         documentId: doc.id,
         title: doc.title,
+        titleKk: doc.titleKk || null,
         ackCount,
         ackPercent: activeEmployees > 0 ? Math.round((ackCount / activeEmployees) * 100) : 0,
       });
@@ -807,7 +878,7 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
     // Сотрудники с просроченным сроком переобучения
     const tests = await prisma.test.findMany({
       where: { isActive: true },
-      include: { document: { select: { title: true } } },
+      include: { document: { select: { title: true, titleKk: true } } },
     });
 
     const employees = await prisma.user.findMany({
@@ -821,7 +892,7 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
       },
     });
 
-    const overdueList: { userName: string; userEmail: string; testTitle: string; expiredAt: string | null }[] = [];
+    const overdueList: { userName: string; userEmail: string; testTitle: string; testTitleKk: string | null; expiredAt: string | null }[] = [];
     const now = new Date();
     for (const emp of employees) {
       for (const test of tests) {
@@ -831,6 +902,7 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
             userName: emp.name,
             userEmail: emp.email,
             testTitle: test.title,
+            testTitleKk: test.titleKk || null,
             expiredAt: null,
           });
         } else {
@@ -840,6 +912,7 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
               userName: emp.name,
               userEmail: emp.email,
               testTitle: test.title,
+              testTitleKk: test.titleKk || null,
               expiredAt: expiryDate.toISOString(),
             });
           }

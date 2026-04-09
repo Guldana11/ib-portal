@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useDocuments } from '@/hooks/useDocuments';
+import { localized } from '@/lib/localize';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -72,7 +73,7 @@ export default function DocumentList() {
               size="sm"
               onClick={() => setSelectedCategory(cat)}
             >
-              {cat}
+              {String(t(`documents.categories.${cat}`, cat))}
             </Button>
           ))}
         </div>
@@ -98,17 +99,17 @@ export default function DocumentList() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <FileText className="h-5 w-5 text-primary shrink-0" />
-                      <CardTitle className="text-base line-clamp-2">{doc.title}</CardTitle>
+                      <CardTitle className="text-base line-clamp-2">{localized(doc, 'title')}</CardTitle>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {doc.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{doc.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{localized(doc, 'description')}</p>
                   )}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="secondary">{doc.category}</Badge>
+                    <Badge variant="secondary">{String(t(`documents.categories.${doc.category}`, doc.category))}</Badge>
                     <Badge variant="outline">v{doc.version}</Badge>
                     <Badge variant={status.variant}>{status.label}</Badge>
                   </div>
