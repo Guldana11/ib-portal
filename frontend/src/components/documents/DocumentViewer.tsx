@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
+import { localized } from '@/lib/localize';
 import { useDocument, useDocumentFile } from '@/hooks/useDocuments';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -58,12 +59,12 @@ export default function DocumentViewer() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="text-xl">{doc.title}</CardTitle>
-              {doc.description && (
-                <p className="text-sm text-muted-foreground mt-2">{doc.description}</p>
+              <CardTitle className="text-xl">{localized(doc, 'title')}</CardTitle>
+              {(doc.description || doc.descriptionKk) && (
+                <p className="text-sm text-muted-foreground mt-2">{localized(doc, 'description')}</p>
               )}
               <div className="flex items-center gap-2 mt-3">
-                <Badge variant="secondary">{doc.category}</Badge>
+                <Badge variant="secondary">{String(t(`documents.categories.${doc.category}`, doc.category))}</Badge>
                 <Badge variant="outline">{t('documents.version', { version: doc.version })}</Badge>
               </div>
             </div>
