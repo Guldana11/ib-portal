@@ -28,7 +28,9 @@ export default function QuestionEditor() {
 
   const [testSettings, setTestSettings] = useState({
     title: '',
+    titleKk: '',
     description: '',
+    descriptionKk: '',
     passingScore: 80,
     timeLimit: '',
     maxAttempts: 3,
@@ -51,7 +53,9 @@ export default function QuestionEditor() {
       setTestId(existingTest.id);
       setTestSettings({
         title: existingTest.title,
+        titleKk: existingTest.titleKk || '',
         description: existingTest.description || '',
+        descriptionKk: existingTest.descriptionKk || '',
         passingScore: existingTest.passingScore,
         timeLimit: existingTest.timeLimit?.toString() || '',
         maxAttempts: existingTest.maxAttempts,
@@ -78,7 +82,9 @@ export default function QuestionEditor() {
       const res = await api.post('/api/admin/tests', {
         documentId,
         title: testSettings.title,
+        titleKk: testSettings.titleKk || undefined,
         description: testSettings.description || undefined,
+        descriptionKk: testSettings.descriptionKk || undefined,
         passingScore: testSettings.passingScore,
         timeLimit: testSettings.timeLimit ? parseInt(testSettings.timeLimit) : null,
         maxAttempts: testSettings.maxAttempts,
@@ -99,7 +105,9 @@ export default function QuestionEditor() {
     mutationFn: async () => {
       const res = await api.put(`/api/admin/tests/${testId}`, {
         title: testSettings.title,
+        titleKk: testSettings.titleKk || undefined,
         description: testSettings.description || undefined,
+        descriptionKk: testSettings.descriptionKk || undefined,
         passingScore: testSettings.passingScore,
         timeLimit: testSettings.timeLimit ? parseInt(testSettings.timeLimit) : null,
         maxAttempts: testSettings.maxAttempts,
@@ -213,20 +221,36 @@ export default function QuestionEditor() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="md:col-span-2 space-y-2">
-              <Label>{t('admin.questionEditor.testName')}</Label>
+            <div className="space-y-2">
+              <Label>{t('admin.questionEditor.testName')} (рус)</Label>
               <Input
                 value={testSettings.title}
                 onChange={(e) => setTestSettings({ ...testSettings, title: e.target.value })}
                 placeholder={t('admin.questionEditor.testNamePlaceholder')}
               />
             </div>
-            <div className="md:col-span-2 space-y-2">
-              <Label>{t('admin.questionEditor.description')}</Label>
+            <div className="space-y-2">
+              <Label>{t('admin.questionEditor.testName')} (қаз)</Label>
+              <Input
+                value={testSettings.titleKk}
+                onChange={(e) => setTestSettings({ ...testSettings, titleKk: e.target.value })}
+                placeholder="Тест атауы"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('admin.questionEditor.description')} (рус)</Label>
               <Textarea
                 value={testSettings.description}
                 onChange={(e) => setTestSettings({ ...testSettings, description: e.target.value })}
                 placeholder={t('admin.questionEditor.descPlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('admin.questionEditor.description')} (қаз)</Label>
+              <Textarea
+                value={testSettings.descriptionKk}
+                onChange={(e) => setTestSettings({ ...testSettings, descriptionKk: e.target.value })}
+                placeholder="Сипаттама"
               />
             </div>
             <div className="space-y-2">

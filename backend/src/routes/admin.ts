@@ -292,6 +292,9 @@ router.delete('/documents/:id', async (req: Request, res: Response, next: NextFu
     ]);
 
     deleteFile(doc.fileKey).catch(console.error);
+    if (doc.fileKeyKk) {
+      deleteFile(doc.fileKeyKk).catch(console.error);
+    }
 
     const user = req.user as any;
     await writeAuditLog({ userId: user.id, action: 'DELETE_DOC', entityId: doc.id, req });
@@ -309,6 +312,7 @@ const createTestSchema = z.object({
   title: z.string().min(1),
   titleKk: z.string().optional(),
   description: z.string().optional(),
+  descriptionKk: z.string().optional(),
   passingScore: z.number().min(1).max(100).default(80),
   timeLimit: z.number().nullable().optional(),
   maxAttempts: z.number().min(1).default(3),
@@ -319,6 +323,7 @@ const updateTestSchema = z.object({
   title: z.string().min(1).optional(),
   titleKk: z.string().optional(),
   description: z.string().optional(),
+  descriptionKk: z.string().optional(),
   passingScore: z.number().min(1).max(100).optional(),
   timeLimit: z.number().nullable().optional(),
   maxAttempts: z.number().min(1).optional(),
