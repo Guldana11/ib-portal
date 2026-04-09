@@ -71,9 +71,10 @@ model Test {
   id           String   @id @default(cuid())
   documentId   String
   title        String
-  titleKk      String?
-  description  String?
-  passingScore Int      @default(80)
+  titleKk        String?
+  description    String?
+  descriptionKk  String?
+  passingScore   Int      @default(80)
   timeLimit    Int?
   maxAttempts  Int      @default(3)
   periodDays   Int      @default(365)

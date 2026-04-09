@@ -55,7 +55,7 @@ export async function getTestWithQuestions(testId: string) {
         include: {
           options: {
             orderBy: { orderIndex: 'asc' },
-            select: { id: true, text: true, orderIndex: true },
+            select: { id: true, text: true, textKk: true, orderIndex: true },
           },
         },
       },
@@ -161,6 +161,7 @@ export async function submitTest(
     questionId: string;
     isCorrect: boolean;
     explanation: string | null;
+    explanationKk: string | null;
     correctOptionIds: string[];
   }[] = [];
 
@@ -179,6 +180,7 @@ export async function submitTest(
       questionId: question.id,
       isCorrect,
       explanation: question.explanation,
+      explanationKk: question.explanationKk,
       correctOptionIds,
     });
   }

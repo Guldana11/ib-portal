@@ -257,7 +257,7 @@ export default function TestRunner() {
             <CardTitle>{localized(test, 'title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {test.description && <p className="text-muted-foreground">{test.description}</p>}
+            {(test.description || test.descriptionKk) && <p className="text-muted-foreground">{localized(test, 'description')}</p>}
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="bg-muted/50 rounded-lg p-3">
                 <p className="text-muted-foreground">{t('testRunner.questionsCount')}</p>
